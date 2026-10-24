@@ -18,6 +18,7 @@ def dominates(left: CandidateAction, right: CandidateAction) -> bool:
 
 def build_pareto_frontier(actions: Iterable[CandidateAction]) -> ParetoPlan:
     items = list(actions)
-    frontier = tuple(sorted((item for item in items if item.auto_recommendable and not any(dominates(other, item) for other in items if other.action_id != item.action_id)), key=lambda item: (-item.evidence_severed, item.collateral_cost)))
-    recommended = min(frontier, key=lambda item: (item.collateral_cost / max(item.evidence_severed, 1e-9), -item.evidence_severed), default=None)
+    frontier = tuple(sorted((item for item in items if not any(dominates(other, item) for other in items if other.action_id != item.action_id)), key=lambda item: (-item.evidence_severed, item.collateral_cost)))
+    safe = [item for item in frontier if item.auto_recommendable]
+    recommended = min(safe, key=lambda item: (item.collateral_cost / max(item.evidence_severed, 1e-9), -item.evidence_severed), default=None)
     return ParetoPlan(frontier, recommended.action_id if recommended else None)

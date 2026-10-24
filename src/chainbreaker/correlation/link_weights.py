@@ -26,6 +26,10 @@ class ScoredLink:
     weight: float
     probability: float
     explanation: str
+    time_decay: float
+    nat_penalty_applied: bool
+    external_boost_applied: bool
+    calibration_status: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +53,10 @@ class IsotonicCalibrator:
                 blocks.append([left[0], right[1], left[2] + right[2], left[3] + right[3]])
         self._scores = tuple(block[1] for block in blocks)
         self._probabilities = tuple(block[2] / block[3] for block in blocks)
+
+    @property
+    def fitted(self) -> bool:
+        return bool(self._scores)
 
     def predict(self, score: float) -> float:
         if not self._scores:
@@ -93,7 +101,17 @@ class EvidenceLinkEngine:
             explanation = "rare external IP strengthened"
         else:
             explanation = "rarity and time decay applied"
-        return ScoredLink(observation, p_entity, weight, self.calibrator.predict(weight), explanation)
+        return ScoredLink(
+            observation,
+            p_entity,
+            weight,
+            self.calibrator.predict(weight),
+            explanation,
+            decay,
+            is_nat,
+            (not is_nat and (observation.rare_external_ip or self._external(observation.entity_value)) and p_entity <= 0.5),
+            "isotonic" if self.calibrator.fitted else "fallback",
+        )
 
     def fit_isotonic(self, observations: Iterable[LinkObservation]) -> CalibrationReport:
         labelled = [item for item in observations if item.label is not None]

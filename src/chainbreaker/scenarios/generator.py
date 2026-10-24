@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -20,6 +21,15 @@ def central_district_rows() -> list[dict[str, object]]:
     ]
 
 
+def camera_to_charger_rows() -> list[dict[str, object]]:
+    start = datetime(2026, 10, 24, 3, 10, tzinfo=timezone.utc)
+    return [
+        {"event_id": "cam-001", "row_id": "cam-row-001", "timestamp": start.isoformat(), "source": "iot", "event_type": "camera_telemetry", "device_id": "CAM-22", "device_class": "camera", "peer": "camera-gateway", "payload_size": "64", "command": "telemetry"},
+        {"event_id": "cam-002", "row_id": "cam-row-002", "timestamp": (start + timedelta(minutes=5)).isoformat(), "source": "iot", "event_type": "camera_beacon", "device_id": "CAM-22", "device_class": "camera", "peer": "rare-domain", "payload_size": "512", "command": "telemetry", "domain": "trusted-update.example"},
+        {"event_id": "cam-003", "row_id": "cam-row-003", "timestamp": (start + timedelta(minutes=6)).isoformat(), "source": "iot", "event_type": "charger_manager_access", "device_id": "EV-08", "device_class": "ev-charger", "peer": "CAM-22", "payload_size": "900", "command": "start-charge"},
+    ]
+
+
 def write_central_district(directory: str | Path) -> None:
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
@@ -30,3 +40,10 @@ def write_central_district(directory: str | Path) -> None:
     with (directory / "assets.csv").open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=["asset_id", "name", "asset_type", "criticality", "baseline_services"])
         writer.writeheader(); writer.writerows(__import__("chainbreaker.scenarios.city_profiles", fromlist=["CENTRAL_DISTRICT_ASSETS"]).CENTRAL_DISTRICT_ASSETS)
+    (directory / "device_inventory.csv").write_text("device_id,device_class,criticality,allowed_peers,allowed_commands\nGW-3,gateway,essential,vpn-session,route\nTC-14,signal-controller,life-safety,GW-3,telemetry\n")
+    (directory / "ground_truth.json").write_text(json.dumps({
+        "scenario": "spray-to-traffic-controller",
+        "attack_event_ids": ["evt-004", "evt-005", "evt-006", "evt-007"],
+        "expected_stages": ["initial-access", "lateral-movement", "impact", "command-and-control"],
+        "benign_event_ids": ["evt-001", "evt-002", "evt-003", "evt-005a", "evt-005b"],
+    }, indent=2))

@@ -62,6 +62,12 @@ class EvidenceLink:
     probability: float
     explanation: str
     row_ids: tuple[str, ...] = ()
+    entity_probability: float = 1.0
+    delta_seconds: float = 0.0
+    time_decay: float = 1.0
+    nat_penalty_applied: bool = False
+    external_ip_boost_applied: bool = False
+    calibration_status: str = "fallback"
 
 
 @dataclass(frozen=True, slots=True)

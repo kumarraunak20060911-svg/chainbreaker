@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+runtime/databases/*.sqlite3
+runtime/reports/*.json
+runtime/uploads/*
+!runtime/uploads/.gitkeep
+.opencode/omnirush/inbox/

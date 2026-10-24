@@ -66,7 +66,8 @@ def detect_iot(events: Iterable[Event], profiles: Mapping[str, DeviceProfile], *
             payload_z = _z(float(event.payload_size or 0), profile.payload_mean, profile.payload_std)
             new_peer = bool(event.peer and event.peer not in profile.allowed_peers)
             new_command = bool(event.command and event.command not in profile.allowed_commands)
-            off_window = bool(event.command and profile.maintenance_windows and not any(_in_window(event.timestamp.time(), a, b) for a, b in profile.maintenance_windows))
+            is_control_command = bool(event.command and event.command.lower() not in {"telemetry", "heartbeat", "status"})
+            off_window = bool(is_control_command and profile.maintenance_windows and not any(_in_window(event.timestamp.time(), a, b) for a, b in profile.maintenance_windows))
             rules = []
             if period_z >= threshold: rules.append("IOT-PERIOD-DEVIATION")
             if payload_z >= threshold: rules.append("IOT-PAYLOAD-DEVIATION")
