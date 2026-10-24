@@ -1,0 +1,10 @@
+account,command,device_class,device_id,domain,event_id,event_type,host,ip,metadata_url,payload_size,peer,row_id,session_id,source,success,timestamp
+ops_k,,,,,evt-001,login_failure,,10.20.0.8,,,,row-001,,auth,false,2026-10-24T02:10:00+00:00
+ops_m,,,,,evt-002,login_failure,,10.20.0.8,,,,row-002,,auth,false,2026-10-24T02:10:10+00:00
+vendor_a,,,,,evt-003,login_failure,,10.20.0.8,,,,row-003,,auth,false,2026-10-24T02:10:20+00:00
+ops_k,,,,,evt-004,login_success,,8.8.8.8,,,,row-004,sess-ops-k,vpn,true,2026-10-24T02:14:00+00:00
+ops_k,route,gateway,GW-3,,evt-005,gateway_pivot,GW-3,,,128,vpn-session,row-005,,iot,,2026-10-24T02:16:00+00:00
+,telemetry,signal-controller,TC-14,,evt-005a,telemetry,,,,96,GW-3,row-005a,,iot,,2026-10-24T02:17:00+00:00
+,telemetry,signal-controller,TC-14,,evt-005b,telemetry,,,,98,GW-3,row-005b,,iot,,2026-10-24T02:18:00+00:00
+,set-phase,signal-controller,TC-14,,evt-006,control_command,,,,1024,GW-3,row-006,,iot,,2026-10-24T02:19:00+00:00
+,,,,q7k2m9x4v8z1-control.example,evt-007,dns_query,GW-3,8.8.8.8,,,,row-007,,dns,,2026-10-24T02:21:00+00:00

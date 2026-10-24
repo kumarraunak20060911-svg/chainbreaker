@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","required":["asset_id","name","asset_type","criticality"],"properties":{"asset_id":{"type":"string"},"name":{"type":"string"},"asset_type":{"type":"string"},"criticality":{"enum":["life-safety","essential","convenience"]},"baseline_services":{"type":"array","items":{"type":"string"}}}}

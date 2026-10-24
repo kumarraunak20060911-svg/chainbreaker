@@ -1,0 +1,18 @@
+[app]
+name = "ChainBreaker"
+host = "127.0.0.1"
+port = 8000
+
+[storage]
+database_path = "runtime/databases/chainbreaker.sqlite3"
+upload_directory = "runtime/uploads"
+report_directory = "runtime/reports"
+
+[analysis]
+top_k_chains = 3
+default_time_decay_seconds = 900
+minimum_link_probability = 0.55
+
+[safety]
+require_human_approval = true
+allow_life_safety_isolation_recommendation = false
