@@ -1,0 +1,3 @@
+device_id,device_class,criticality,allowed_peers,allowed_commands
+GW-3,gateway,essential,vpn-session,route
+TC-14,signal-controller,life-safety,GW-3,telemetry

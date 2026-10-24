@@ -93,3 +93,4 @@ class CandidateAction:
     auto_recommendable: bool
     reason: str
     affected_services: tuple[str, ...] = ()
+    approval_required: bool = True

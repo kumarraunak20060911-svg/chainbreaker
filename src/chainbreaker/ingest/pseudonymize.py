@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from ipaddress import ip_address
 from dataclasses import replace
 from typing import Iterable
 
@@ -20,9 +21,16 @@ def pseudonymize_events(events: Iterable[Event], key: bytes) -> list[Event]:
     for event in events:
         values = {field: pseudonym(getattr(event, field), key) for field in fields}
         metadata = dict(event.metadata)
-        if event.ip and event.ip.startswith(("10.", "172.16.", "192.168.")):
+        zone = str(metadata.get("network_zone", "")).strip().lower()
+        explicit_nat = str(metadata.get("public_wifi_nat", "")).strip().lower() in {"1", "true", "yes"}
+        if explicit_nat or any(token in zone for token in ("public-wifi", "public_wifi", "nat", "cgnat")):
             metadata["public_wifi_nat"] = True
         elif event.ip:
-            metadata["external_ip"] = True
+            try:
+                address = ip_address(event.ip)
+                metadata["external_ip"] = not (address.is_private or address.is_loopback or address.is_reserved or address.is_link_local)
+            except ValueError:
+                metadata["external_ip"] = False
+        metadata["pseudonymized"] = True
         output.append(replace(event, metadata=metadata, **values))
     return output

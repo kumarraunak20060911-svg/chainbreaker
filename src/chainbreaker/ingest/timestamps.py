@@ -9,15 +9,21 @@ from chainbreaker.domain.models import Event
 
 
 def estimate_clock_skew(events: Iterable[Event]) -> dict[str, float]:
-    by_source: dict[str, list[float]] = {}
-    ordered = sorted(events, key=lambda event: event.timestamp)
-    if not ordered:
+    items = list(events)
+    if not items:
         return {}
-    anchor = ordered[0].timestamp
-    for event in ordered:
-        by_source.setdefault(event.source.value, []).append((event.timestamp - anchor).total_seconds())
-    global_median = median(value for values in by_source.values() for value in values)
-    return {source: median(values) - global_median for source, values in by_source.items()}
+    explicit: dict[str, list[float]] = {}
+    for event in items:
+        value = event.metadata.get("clock_offset_seconds")
+        if value not in (None, ""):
+            try:
+                explicit.setdefault(event.source.value, []).append(float(value))
+            except (TypeError, ValueError):
+                continue
+    return {
+        source: round(median(values), 3) if values else 0.0
+        for source, values in ((event.source.value, explicit.get(event.source.value, [])) for event in items)
+    }
 
 
 def apply_clock_skew(events: Iterable[Event], offsets: dict[str, float]) -> list[Event]:

@@ -9,13 +9,17 @@ router = APIRouter()
 
 @router.get("/incidents/{run_id}/report")
 def report(run_id: str):
-    run = RUNS.get(run_id) or latest()
+    run = RUNS.get(run_id)
+    if not run:
+        raise HTTPException(404, "incident not found")
     return run["report"]
 
 
 @router.get("/incidents/{run_id}/report/verify/{row_index}")
 def verify_row(run_id: str, row_index: int):
-    run = RUNS.get(run_id) or latest()
+    run = RUNS.get(run_id)
+    if not run:
+        raise HTTPException(404, "incident not found")
     if row_index < 0 or row_index >= len(run["events"]):
         raise HTTPException(404, "row index not found")
     proof = run["tree"].proof(row_index)

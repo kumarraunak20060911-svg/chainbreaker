@@ -11,6 +11,7 @@ from chainbreaker.domain.ids import stable_id
 from chainbreaker.domain.models import Event
 
 from .finding import DetectionFinding
+from .statistics import CountMinSketch, character_ngram_surprisal, ewma_z_scores
 
 
 def _entropy(value: str) -> float:
@@ -26,20 +27,40 @@ def detect_dns(events: Iterable[Event]) -> list[DetectionFinding]:
     for event in dns_events:
         by_host_domain[(event.host or "unknown", event.domain or "")].append(event)
     domain_counts = Counter(event.domain for event in dns_events)
+    sketch = CountMinSketch()
+    for event in dns_events:
+        sketch.add(event.domain or "")
+    by_host: defaultdict[str, list[Event]] = defaultdict(list)
+    for event in dns_events:
+        by_host[event.host or "unknown"].append(event)
     for event in dns_events:
         domain = event.domain or ""
         labels = domain.split(".")
         label = labels[0] if labels else domain
         entropy = _entropy(label)
-        rare = bool(event.metadata.get("first_seen", False)) or domain_counts.get(domain, 0) <= 1 or len(label) >= 18
-        dga_like = entropy >= 3.5 and len(label) >= 10
+        ngram_surprisal = character_ngram_surprisal(label)
+        rare = bool(event.metadata.get("first_seen", False)) or sketch.estimate(domain) <= 1 or len(label) >= 18
+        dga_like = (entropy >= 3.5 and len(label) >= 10) or ngram_surprisal >= 3.5
         if dga_like or rare:
             findings.append(DetectionFinding(
-                stable_id("find", "dns", event.event_id), event.event_id, "DNS-RARE-DOMAIN",
+                stable_id("find", "dns", event.event_id), event.event_id, "DNS-NGRAM-OR-RARE-DESTINATION",
                 "Rare or algorithmic-looking domain", "medium", Stage.COMMAND_AND_CONTROL,
-                "Domain has elevated label entropy or is marked first-seen",
-                {"domain": domain, "entropy": round(entropy, 3), "first_seen": rare},
+                "Domain has elevated entropy, character n-gram surprisal, or low sketch frequency",
+                {"domain": domain, "entropy": round(entropy, 3), "ngram_surprisal": round(ngram_surprisal, 3), "first_seen": rare, "sketch_count": sketch.estimate(domain)},
             ))
+    for host, items in by_host.items():
+        ordered_host = sorted(items, key=lambda item: item.timestamp)
+        values = []
+        for left, right in zip(ordered_host, ordered_host[1:]):
+            values.append(max(0.001, (right.timestamp - left.timestamp).total_seconds()))
+        for event, z_score in zip(ordered_host[1:], ewma_z_scores(values)):
+            if z_score >= 3.0:
+                findings.append(DetectionFinding(
+                    stable_id("find", "dns-ewma", host, event.event_id), event.event_id, "DNS-EWMA-RATE-BURST",
+                    "DNS query-rate burst", "medium", Stage.COMMAND_AND_CONTROL,
+                    "EWMA inter-arrival deviation exceeded the host baseline",
+                    {"host": host, "ewma_z": round(z_score, 3)},
+                ))
     for (host, domain), items in by_host_domain.items():
         if len(items) < 3:
             continue
@@ -59,6 +80,6 @@ def detect_dns(events: Iterable[Event]) -> list[DetectionFinding]:
                 stable_id("find", "dns-rate", host, domain), ordered[-1].event_id, "DNS-EWMA-RATE-BURST",
                 "DNS query-rate burst", "medium", Stage.COMMAND_AND_CONTROL,
                 "Repeated queries exceeded the small-window baseline for this host and destination",
-                {"host": host, "domain": domain, "query_count": len(items)},
+                {"host": host, "domain": domain, "query_count": len(items), "window_seconds": round((ordered[-1].timestamp - ordered[0].timestamp).total_seconds(), 3)},
             ))
     return findings

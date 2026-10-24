@@ -34,16 +34,28 @@ def weighted_vertex_cut(graph: nx.DiGraph, sources: Iterable[str], targets: Iter
     return CutResult(nodes, sum(split[(node, "in")][(node, "out")]["capacity"] for node in nodes))
 
 
-def evaluate_action(action_id: str, action_type: ActionType, target: Asset, evidence_severed: float, *, affected_services: Iterable[str] = ()) -> CandidateAction:
+def evaluate_action(
+    action_id: str,
+    action_type: ActionType,
+    target: Asset,
+    evidence_severed: float,
+    *,
+    affected_services: Iterable[str] = (),
+    collateral_multiplier: float | None = None,
+) -> CandidateAction:
     allowed = action_allowed(action_type, target.criticality)
+    criticality_multiplier = 1000.0 if target.criticality is Criticality.LIFE_SAFETY else 100.0 if target.criticality is Criticality.ESSENTIAL else 1.0
+    multiplier = criticality_multiplier if collateral_multiplier is None else collateral_multiplier
+    services = tuple(affected_services)
     return CandidateAction(
         action_id=action_id,
         action_type=action_type,
         target_id=target.asset_id,
         evidence_severed=max(0.0, min(1.0, evidence_severed)),
-        collateral_cost=(1000.0 if target.criticality is Criticality.LIFE_SAFETY else 100.0 if target.criticality is Criticality.ESSENTIAL else 1.0) * max(1, len(target.baseline_services)),
+        collateral_cost=multiplier * max(1, len(services)),
         criticality=target.criticality,
         auto_recommendable=allowed,
         reason="Life-safety isolation is prohibited; prefer a narrower control" if not allowed else "Human approval required before execution",
-        affected_services=tuple(affected_services),
+        affected_services=services,
+        approval_required=True,
     )

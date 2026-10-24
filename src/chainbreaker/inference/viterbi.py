@@ -29,6 +29,8 @@ class StageEdge:
 class Justification:
     row_ids: tuple[str, ...]
     complete: bool
+    method: str = "greedy-set-cover"
+    row_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,17 +62,42 @@ def infer_top_k(nodes: Iterable[StageNode], edges: Iterable[StageEdge], transiti
                 candidates.append((score + edge.weight + log(max(p, 1e-12)), node_ids + (node.node_id,), edge_ids + (edge.edge_id,)))
         paths[node.node_id] = nlargest(top_k, candidates, key=lambda item: (item[0], item[1]))
     terminals = [item for node in node_list if not outgoing[node.node_id] for item in paths[node.node_id]]
-    best = nlargest(top_k, terminals, key=lambda item: (item[0], item[1]))
+    multi_stage = [item for item in terminals if len(item[1]) >= 2]
+    ranked = multi_stage or terminals
+    best = nlargest(top_k, ranked, key=lambda item: (item[0], len(item[1]), item[1]))
     edges_by_id = {edge.edge_id: edge for edge in edge_list}
     result = []
     for score, node_ids, edge_ids in best:
-        required = set()
-        for node_id in node_ids:
-            required.update(by_id[node_id].row_ids or (node_id,))
-        for edge_id in edge_ids:
-            required.update(edges_by_id[edge_id].row_ids or (edge_id,))
-        result.append(AttackChain(score, node_ids, edge_ids, tuple(by_id[node_id].stage_tag for node_id in node_ids), Justification(tuple(sorted(required)), True)))
+        justification = minimal_justification(node_ids, edge_ids, by_id, edges_by_id)
+        result.append(AttackChain(score, node_ids, edge_ids, tuple(by_id[node_id].stage_tag for node_id in node_ids), justification))
     return result
+
+
+def minimal_justification(
+    node_ids: tuple[str, ...],
+    edge_ids: tuple[str, ...],
+    nodes: Mapping[str, StageNode],
+    edges: Mapping[str, StageEdge],
+) -> Justification:
+    """Select the smallest greedy row set covering every chain node and transition."""
+    units: dict[str, set[str]] = {}
+    for index, node_id in enumerate(node_ids):
+        rows = set(nodes[node_id].row_ids or (node_id,))
+        units[f"node:{index}"] = rows
+    for index, edge_id in enumerate(edge_ids):
+        rows = set(edges[edge_id].row_ids or (edge_id,))
+        units[f"edge:{index}"] = rows
+    candidates = sorted({row for rows in units.values() for row in rows})
+    uncovered = set(units)
+    selected: list[str] = []
+    while uncovered:
+        best = max(candidates, key=lambda row: (sum(row in units[unit] for unit in uncovered), row), default=None)
+        if best is None or not any(best in units[unit] for unit in uncovered):
+            break
+        selected.append(best)
+        uncovered = {unit for unit in uncovered if best not in units[unit]}
+        candidates.remove(best)
+    return Justification(tuple(sorted(selected)), not uncovered, "greedy-set-cover", len(selected))
 
 
 class StageAwareViterbi:

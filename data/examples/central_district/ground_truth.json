@@ -1,0 +1,22 @@
+{
+  "scenario": "spray-to-traffic-controller",
+  "attack_event_ids": [
+    "evt-004",
+    "evt-005",
+    "evt-006",
+    "evt-007"
+  ],
+  "expected_stages": [
+    "initial-access",
+    "lateral-movement",
+    "impact",
+    "command-and-control"
+  ],
+  "benign_event_ids": [
+    "evt-001",
+    "evt-002",
+    "evt-003",
+    "evt-005a",
+    "evt-005b"
+  ]
+}

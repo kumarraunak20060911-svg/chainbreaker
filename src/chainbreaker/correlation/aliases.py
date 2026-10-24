@@ -10,3 +10,12 @@ def infer_aliases(events: Iterable[Event]) -> dict[str, set[str]]:
         if event.account and event.host:
             aliases[event.account].add(event.host)
     return dict(aliases)
+
+
+def alias_correction_rows(events: Iterable[Event]) -> list[dict[str, object]]:
+    """Return explainable, reversible alias evidence without rewriting source identities."""
+    aliases = infer_aliases(events)
+    return [
+        {"account": account, "candidate_hosts": sorted(hosts), "reversible": True, "reason": "co-observed account and host"}
+        for account, hosts in sorted(aliases.items())
+    ]

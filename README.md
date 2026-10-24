@@ -14,9 +14,11 @@ asset.
 * rarity/time-weighted evidence links with isotonic calibration;
 * stage-aware top-k attack-chain inference and minimal justification rows;
 * safety-tiered containment planning with weighted vertex cuts, Pareto ranking,
-  and counterfactual replay;
+  counterfactual replay, and human decision receipts;
 * Merkle-rooted row verification for exported case reports;
-* server-rendered analyst dashboard using FastAPI, Jinja2, SVG, and CSS.
+* server-rendered analyst dashboard using FastAPI, Jinja2, SVG, and CSS;
+* synthetic benchmark metrics for precision/recall/F1, incident ARI, correct-chain
+  rate, time to detect, events per second, Brier score, and ablation metadata.
 
 No Node.js, JavaScript build step, or `.env` file is required. Configuration is
 checked in under `config/default.toml`; secrets are supplied as command-line
@@ -40,7 +42,14 @@ and will never execute a network or account action.
 ```bash
 PYTHONPATH=src pytest -q
 PYTHONPATH=src python -m compileall -q src tests evaluation scripts
+PYTHONPATH=src python evaluation/run_benchmark.py
+PYTHONPATH=src python evaluation/run_ablation.py
 ```
+
+The dashboard includes `/metrics`, `/runs/<run_id>/evidence`,
+`/runs/<run_id>/containment`, `/runs/<run_id>/replay`, and
+`/runs/<run_id>/report`. Uploads may include optional asset and device-inventory
+files so criticality and IoT baselines come from the authorized site inventory.
 
 ## Security posture
 

@@ -17,4 +17,7 @@ def initialize(path: str | Path) -> None:
         CREATE TABLE IF NOT EXISTS runs (run_id TEXT PRIMARY KEY, created_at TEXT NOT NULL, event_count INTEGER NOT NULL, incident_count INTEGER NOT NULL, merkle_root TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS events (run_id TEXT NOT NULL, event_id TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (run_id, event_id));
         CREATE TABLE IF NOT EXISTS findings (run_id TEXT NOT NULL, finding_id TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (run_id, finding_id));
+        CREATE TABLE IF NOT EXISTS links (run_id TEXT NOT NULL, link_id TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY (run_id, link_id));
+        CREATE TABLE IF NOT EXISTS decisions (run_id TEXT NOT NULL, decision_id TEXT PRIMARY KEY, action_id TEXT NOT NULL, decision TEXT NOT NULL, actor TEXT NOT NULL, created_at TEXT NOT NULL, reason TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS reports (run_id TEXT PRIMARY KEY, payload TEXT NOT NULL);
         """)

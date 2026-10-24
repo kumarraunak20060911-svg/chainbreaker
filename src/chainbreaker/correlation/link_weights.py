@@ -67,7 +67,7 @@ class IsotonicCalibrator:
 class EvidenceLinkEngine:
     def __init__(self, entity_counts: Mapping[str, Mapping[str, int | float]], *, nat_penalty: float = 0.03, time_constants: Mapping[str, float] | None = None) -> None:
         self.counts = {kind: {value: float(count) for value, count in values.items()} for kind, values in entity_counts.items()}
-        self.constants = {"ip": 900.0, "account": 1800.0, "host": 3600.0, "device": 7200.0, "domain": 900.0, "session": 600.0, **(time_constants or {})}
+        self.constants = {"ip": 900.0, "account": 1800.0, "host": 3600.0, "device": 7200.0, "peer": 7200.0, "domain": 900.0, "session": 600.0, "topic": 1800.0, **(time_constants or {})}
         self.nat_penalty = nat_penalty
         self.calibrator = IsotonicCalibrator()
         self.report = CalibrationReport(0, 0, float("nan"))

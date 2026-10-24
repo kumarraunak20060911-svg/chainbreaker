@@ -10,6 +10,7 @@ from chainbreaker.domain.models import CandidateAction
 class ParetoPlan:
     frontier: tuple[CandidateAction, ...]
     recommended_action_id: str | None
+    replays: dict[str, dict[str, object]] | None = None
 
 
 def dominates(left: CandidateAction, right: CandidateAction) -> bool:

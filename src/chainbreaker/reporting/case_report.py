@@ -15,7 +15,7 @@ def _plain(value: Any) -> Any:
     return value
 
 
-def build_case_report(run_id, incident, chain, findings, links, merkle_root, *, calibration=None, containment=None, row_proofs=None):
+def build_case_report(run_id, incident, chain, findings, links, merkle_root, *, calibration=None, containment=None, row_proofs=None, diagnostics=None, incidents=None, metrics=None, corrections=None, executive_summary=None, llm_prompt=None):
     return {
         "report_id": f"report-{run_id}",
         "run_id": run_id,
@@ -28,5 +28,11 @@ def build_case_report(run_id, incident, chain, findings, links, merkle_root, *, 
         "calibration": _plain(calibration),
         "containment": _plain(containment),
         "row_proofs": _plain(row_proofs),
+        "diagnostics": _plain(diagnostics),
+        "incidents": _plain(incidents),
+        "metrics": _plain(metrics),
+        "corrections": _plain(corrections),
+        "executive_summary": _plain(executive_summary),
+        "llm_prompt": _plain(llm_prompt),
         "disclaimer": "Simulation and investigation output only. No containment action was executed.",
     }
