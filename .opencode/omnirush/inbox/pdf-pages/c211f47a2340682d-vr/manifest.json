@@ -1,0 +1,36 @@
+{
+  "version": 3,
+  "sha256": "c211f47a2340682d4b12d374d62e1708a0579bbcb35496308beaaf1f13d5bf11",
+  "filename": "vr.pdf",
+  "pageCount": 3,
+  "textPages": 3,
+  "textBudgetExhausted": false,
+  "pagesWithoutText": [],
+  "renderedPages": [
+    {
+      "page": 1,
+      "width": 1108,
+      "height": 1566,
+      "bytes": 323958,
+      "mime": "image/png",
+      "fileName": "page-001.png"
+    },
+    {
+      "page": 2,
+      "width": 1108,
+      "height": 1566,
+      "bytes": 268873,
+      "mime": "image/png",
+      "fileName": "page-002.png"
+    },
+    {
+      "page": 3,
+      "width": 1108,
+      "height": 1566,
+      "bytes": 334823,
+      "mime": "image/png",
+      "fileName": "page-003.png"
+    }
+  ],
+  "renderBudgetExhausted": false
+}
