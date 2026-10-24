@@ -37,7 +37,7 @@ Audited against `vr.pdf` (ChronoForge Cybersecurity Proposal, pages 1–3).
 | Audit-ready report and local summary | `reporting/`, report route | Complete |
 | Optional LLM summary with citations | provider-neutral prompt plus deterministic local summary | Complete, opt-in |
 | React/Vite/Cytoscape wireframe | intentionally not used | Replaced by Python/SVG because Node is prohibited |
-| Post-hackathon STIX/Sigma/Wazuh adapters | documented as future integration direction | Deferred by proposal scope |
+| Post-hackathon STIX/Sigma/Wazuh adapters | `reporting/stix_sigma.py`, `containment/dispatcher.py` | Complete (STIX 2.1 JSON, Sigma YAML, Cortex/Wazuh SOAR webhook) |
 
 The only intentionally conservative choice is clock correction: timestamps are
 shifted only when a source explicitly supplies `clock_offset_seconds`, avoiding
