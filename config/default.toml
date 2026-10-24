@@ -4,9 +4,13 @@ host = "127.0.0.1"
 port = 8000
 
 [storage]
-database_path = "runtime/databases/chainbreaker.sqlite3"
+database_url = "postgresql+psycopg://chainbreaker:change-me@localhost:5432/chainbreaker"
+sqlite_test_url = "sqlite+pysqlite:///runtime/databases/chainbreaker-test.sqlite3"
 upload_directory = "runtime/uploads"
 report_directory = "runtime/reports"
+batch_size = 500
+job_poll_seconds = 0.5
+analysis_window_events = 50000
 
 [analysis]
 top_k_chains = 3
@@ -16,3 +20,9 @@ minimum_link_probability = 0.55
 [safety]
 require_human_approval = true
 allow_life_safety_isolation_recommendation = false
+
+[security]
+environment = "development"
+require_tenant_header = false
+max_upload_bytes = 104857600
+retention_days = 90

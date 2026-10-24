@@ -30,6 +30,24 @@ def camera_to_charger_rows() -> list[dict[str, object]]:
     ]
 
 
+def university_security_rows() -> list[dict[str, object]]:
+    """Synthetic, explicitly labelled university-like activity with benign near misses."""
+    start = datetime(2026, 10, 24, 9, 0, tzinfo=timezone.utc)
+    rows: list[dict[str, object]] = [
+        {"event_id": "uni-001", "row_id": "uni-row-001", "timestamp": start.isoformat(), "source": "auth", "event_type": "login_success", "account": "student-42", "ip": "10.10.0.5", "success": "true", "network_zone": "campus-nat"},
+        {"event_id": "uni-002", "row_id": "uni-row-002", "timestamp": (start + timedelta(minutes=2)).isoformat(), "source": "vpn", "event_type": "vpn_connect", "account": "student-42", "ip": "203.0.113.20", "session_id": "uni-session-42", "success": "true"},
+        {"event_id": "uni-003", "row_id": "uni-row-003", "timestamp": (start + timedelta(minutes=3)).isoformat(), "source": "portal", "event_type": "web_request", "account": "student-42", "host": "portal-app-1", "ip": "203.0.113.20", "domain": "portal.university.example", "metadata_url": "/grades"},
+        {"event_id": "uni-004", "row_id": "uni-row-004", "timestamp": (start + timedelta(minutes=4)).isoformat(), "source": "dns", "event_type": "dns_query", "host": "lab-workstation-7", "ip": "203.0.113.20", "domain": "x7q9m2z8-beacon.example.net", "first_seen": "true"},
+        {"event_id": "uni-005", "row_id": "uni-row-005", "timestamp": (start + timedelta(minutes=5)).isoformat(), "source": "iot", "event_type": "camera_telemetry", "device_id": "LAB-CAM-7", "device_class": "camera", "peer": "lab-gateway", "command": "telemetry", "payload_size": "64"},
+        {"event_id": "uni-006", "row_id": "uni-row-006", "timestamp": (start + timedelta(minutes=6)).isoformat(), "source": "iot", "event_type": "camera_control", "device_id": "LAB-CAM-7", "device_class": "camera", "peer": "unknown-external-peer", "command": "export-recording", "payload_size": "2048"},
+    ]
+    rows.extend({"event_id": f"uni-spray-{index}", "row_id": f"uni-spray-row-{index}", "timestamp": (start + timedelta(minutes=10, seconds=index * 8)).isoformat(), "source": "auth", "event_type": "login_failure", "account": f"faculty-{index}", "ip": "198.51.100.44", "success": "false", "network_zone": "internet"} for index in range(1, 6))
+    rows.append(dict(rows[-1], event_id="uni-duplicate", row_id="uni-duplicate-row"))
+    rows.append({"event_id": "uni-late", "row_id": "uni-late-row", "timestamp": (start - timedelta(minutes=2)).isoformat(), "source": "dns", "event_type": "dns_query", "host": "lab-workstation-7", "domain": "updates.university.example"})
+    rows.append({"event_id": "uni-malformed", "row_id": "uni-malformed-row", "timestamp": "not-a-timestamp", "source": "auth", "event_type": "login_failure"})
+    return rows
+
+
 def write_central_district(directory: str | Path) -> None:
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)

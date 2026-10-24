@@ -2,6 +2,8 @@ from dataclasses import asdict
 
 from fastapi import APIRouter, HTTPException
 
+from chainbreaker.settings import Settings
+from chainbreaker.storage.persistent import get_report
 from chainbreaker.web.app import RUNS, latest
 
 router = APIRouter()
@@ -11,7 +13,10 @@ router = APIRouter()
 def report(run_id: str):
     run = RUNS.get(run_id)
     if not run:
-        raise HTTPException(404, "incident not found")
+        stored = get_report(run_id, "dev-organization", settings=Settings.load())
+        if stored is None:
+            raise HTTPException(404, "incident not found")
+        return stored
     return run["report"]
 
 

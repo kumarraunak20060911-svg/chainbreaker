@@ -29,6 +29,8 @@ from chainbreaker.reporting.case_report import build_case_report
 from chainbreaker.scenarios.generator import central_district_rows
 from chainbreaker.storage.database import initialize
 from chainbreaker.storage.repositories import save_run
+from chainbreaker.settings import Settings
+DEFAULT_ORGANIZATION_ID = "dev-organization"
 from chainbreaker.evaluation.metrics import adjusted_rand_index, correct_chain_rate, events_per_second, time_to_detect
 from .graph_svg import evidence_graph_svg
 from .timeline_svg import timeline_svg
@@ -62,10 +64,28 @@ def _analysis_graph(events, links, target_asset_id: str) -> nx.DiGraph:
     return graph
 
 
-def process_rows(rows, *, expected_attack_ids: set[str] | None = None, expected_stages: tuple[str, ...] = (), expected_cluster_labels: dict[str, str] | None = None, asset_rows=None, inventory_rows=None) -> dict:
+def process_rows(rows, *, expected_attack_ids: set[str] | None = None, expected_stages: tuple[str, ...] = (), expected_cluster_labels: dict[str, str] | None = None, asset_rows=None, inventory_rows=None, organization_id: str = DEFAULT_ORGANIZATION_ID, ingestion_job_id: str | None = None, settings: Settings | None = None, persist: bool = True) -> dict:
     started_at = datetime.now(timezone.utc)
     tick = perf_counter()
     events, ingest_diagnostics = ingest_rows_diagnostics(rows)
+    settings = settings or Settings.load()
+    job_id = ingestion_job_id
+    update_job = None
+    save_report = None
+    try:
+        from chainbreaker.storage.persistent import ensure_organization, create_job, persist_events, persist_findings, persist_graph, update_job, save_report
+        if persist:
+            ensure_organization(organization_id, settings=settings)
+            job_id = ingestion_job_id or create_job(organization_id, "inline-analysis", settings=settings)
+            if ingestion_job_id is None:
+                from chainbreaker.storage.persistent import claim_job
+                claim_job(job_id, organization_id, settings=settings)
+            accepted, duplicates = persist_events(events, organization_id, job_id, settings=settings)
+            update_job(job_id, organization_id, processed=len(events), accepted=accepted, rejected=len(ingest_diagnostics.rejected_rows), duplicates=duplicates, progress=0.2, settings=settings)
+    except Exception:
+        if settings.environment != "test":
+            raise
+        job_id = ingestion_job_id
     profiles = profiles_from_inventory(events, inventory_rows or []) if inventory_rows else {}
     device_events = [event for event in events if event.device_class]
     for device_class in {event.device_class for event in device_events}:
@@ -76,6 +96,14 @@ def process_rows(rows, *, expected_attack_ids: set[str] | None = None, expected_
             profiles[device_class] = build_profile(device_class or "unknown", baseline, maintenance_windows=((time(2, 0), time(2, 5)),))
     findings = detect_all(events, profiles)
     links = build_links(events)
+    try:
+        from chainbreaker.storage.persistent import persist_findings, persist_graph
+        if persist:
+            persist_findings(findings, organization_id, settings=settings)
+            persist_graph(events, links, organization_id, settings=settings)
+    except Exception:
+        if settings.environment != "test":
+            raise
     chains = infer_chains(events, links)
     incidents = cluster_incidents(events, findings, links)
     tree = MerkleTree([asdict(event) for event in events])
@@ -107,9 +135,10 @@ def process_rows(rows, *, expected_attack_ids: set[str] | None = None, expected_
     executive_summary = build_local_executive_summary(summary, findings, chains[0] if chains else None, citations[0] if citations else ())
     llm_prompt = build_llm_summary_prompt(summary, findings, chains[0] if chains else None, citations[0] if citations else ())
     report = build_case_report(run_id, summary, chains[0] if chains else None, findings, links, tree.root, calibration=calibration, containment=containment, row_proofs=row_proofs, diagnostics=ingest_diagnostics, incidents=incidents, metrics=metrics, corrections=corrections, executive_summary=executive_summary, llm_prompt=llm_prompt)
-    report_path = Path("runtime/reports") / f"{run_id}.json"
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, indent=2, default=str))
+    report_path = settings.report_directory / f"{run_id}.json"
+    if settings.environment != "production":
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, default=str))
     record = {
         "run_id": run_id,
         "events": events,
@@ -131,9 +160,18 @@ def process_rows(rows, *, expected_attack_ids: set[str] | None = None, expected_
         "decisions": [],
     }
     RUNS[run_id] = record
-    database_path = Path("runtime/databases/chainbreaker.sqlite3")
-    initialize(database_path)
-    save_run(database_path, run_id, report["generated_at"], events, findings, tree.root, incident_count=len(incidents), links=links, report=report)
+    try:
+        if job_id and update_job and save_report:
+            update_job(job_id, organization_id, status="SUCCEEDED", processed=len(events), accepted=len(events) - len(ingest_diagnostics.rejected_rows), rejected=len(ingest_diagnostics.rejected_rows), progress=1.0, settings=settings)
+        if save_report:
+            save_report(run_id, organization_id, report, settings=settings)
+    except Exception:
+        if settings.environment != "test":
+            raise
+    if persist and settings.environment != "production":
+        database_path = Path("runtime/databases/chainbreaker.sqlite3")
+        initialize(database_path)
+        save_run(database_path, run_id, report["generated_at"], events, findings, tree.root, incident_count=len(incidents), links=links, report=report)
     return record
 
 
@@ -161,20 +199,43 @@ async def upload_page(request: Request):
 
 @router.post("/upload")
 async def upload_dataset(request: Request, file: UploadFile = File(...), assets_file: UploadFile | None = File(None), inventory_file: UploadFile | None = File(None)):
+    settings = Settings.load()
     content = await file.read()
-    temp = Path("runtime/uploads") / (file.filename or "upload.csv")
+    if len(content) > settings.max_upload_bytes:
+        return HTMLResponse("Upload exceeds the configured size limit.", status_code=413)
+    temp = settings.upload_directory / f"{uuid4().hex}-{Path(file.filename or 'upload.csv').name}"
     temp.parent.mkdir(parents=True, exist_ok=True)
     temp.write_bytes(content)
-    asset_rows = read_rows(assets_file.file) if assets_file else None
-    inventory_rows = read_rows(inventory_file.file) if inventory_file else None
-    run = process_rows(read_rows(temp), asset_rows=asset_rows, inventory_rows=inventory_rows)
-    return RedirectResponse(f"/runs/{run['run_id']}", status_code=303)
+    asset_path = inventory_path = None
+    for uploaded, label in ((assets_file, "assets"), (inventory_file, "inventory")):
+        if uploaded and uploaded.filename:
+            supplemental = settings.upload_directory / f"{uuid4().hex}-{label}-{Path(uploaded.filename).name}"
+            supplemental.write_bytes(await uploaded.read())
+            if label == "assets":
+                asset_path = str(supplemental)
+            else:
+                inventory_path = str(supplemental)
+    from chainbreaker.storage.persistent import create_job, ensure_organization
+    from chainbreaker.ingest.jobs import submit_job
+    ensure_organization(DEFAULT_ORGANIZATION_ID, settings=settings)
+    job_id = create_job(DEFAULT_ORGANIZATION_ID, json.dumps({"events": str(temp), "assets": asset_path, "inventory": inventory_path}), settings=settings)
+    submit_job(job_id, DEFAULT_ORGANIZATION_ID, json.dumps({"events": str(temp), "assets": asset_path, "inventory": inventory_path}), settings=settings)
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
 @router.get("/runs/{run_id}", response_class=HTMLResponse)
 async def run_page(request: Request, run_id: str):
     run = RUNS.get(run_id) or latest()
     return templates.TemplateResponse(request=request, name="incident.html", context={"run": run, "graph": evidence_graph_svg(run["events"], run["links"]), "timeline": timeline_svg(run["events"])})
+
+
+@router.get("/jobs/{job_id}", response_class=HTMLResponse)
+async def job_page(request: Request, job_id: str):
+    from chainbreaker.storage.persistent import get_job
+    job = get_job(job_id, DEFAULT_ORGANIZATION_ID, settings=Settings.load())
+    if job is None:
+        return templates.TemplateResponse(request=request, name="job.html", context={"job": None}, status_code=404)
+    return templates.TemplateResponse(request=request, name="job.html", context={"job": job})
 
 
 @router.get("/runs/{run_id}/containment", response_class=HTMLResponse)

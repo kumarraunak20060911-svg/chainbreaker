@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -29,6 +30,29 @@ def read_rows(path: str | Path | io.TextIOBase) -> list[dict[str, Any]]:
         return list(csv.DictReader(handle))
 
 
+def iter_rows(path: str | Path | io.TextIOBase):
+    """Stream CSV/JSONL rows without retaining the complete input in memory."""
+    if not isinstance(path, (str, Path)):
+        name = str(getattr(path, "name", "")).lower()
+        if name.endswith(".jsonl"):
+            for line in path:
+                text = line.decode("utf-8") if isinstance(line, bytes) else line
+                if text.strip():
+                    yield json.loads(text)
+            return
+        yield from csv.DictReader(path)
+        return
+    source = Path(path)
+    if source.suffix.lower() == ".jsonl":
+        with source.open(encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    yield json.loads(line)
+        return
+    with source.open(newline="", encoding="utf-8") as handle:
+        yield from csv.DictReader(handle)
+
+
 def ingest_rows(rows: Iterable[Mapping[str, Any]], *, pseudonym_key: bytes = b"chainbreaker-demo-key") -> list[Event]:
     return ingest_rows_diagnostics(rows, pseudonym_key=pseudonym_key)[0]
 
@@ -51,6 +75,15 @@ def ingest_rows_diagnostics(
         [f"applied {source} clock offset of {offset:.3f}s" for source, offset in offsets.items() if abs(offset) > 0.001]
         + ([f"inferred {sum(len(values) for values in aliases.values())} account-to-host alias candidates"] if aliases else [])
     )
+    fingerprinted = []
+    for event in corrected:
+        basis = "|".join(str(value or "") for value in (event.row_id, event.timestamp.isoformat(), event.source.value, event.event_type, event.account, event.host, event.ip, event.device_id, event.domain, event.command, event.session_id))
+        fingerprint = hashlib.sha256(basis.encode()).hexdigest()
+        metadata = dict(event.metadata)
+        metadata["fingerprint"] = fingerprint
+        from dataclasses import replace
+        fingerprinted.append(replace(event, metadata=metadata))
+    corrected = fingerprinted
     diagnostics = IngestDiagnostics(
         accepted_rows=len(corrected),
         rejected_rows=tuple(rejected),

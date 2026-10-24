@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: chainbreaker
+      POSTGRES_USER: chainbreaker
+      POSTGRES_PASSWORD: ${CHAINBREAKER_POSTGRES_PASSWORD:?Set CHAINBREAKER_POSTGRES_PASSWORD in the shell}
+    volumes:
+      - chainbreaker-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainbreaker -d chainbreaker"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    environment:
+      CHAINBREAKER_ENVIRONMENT: production
+      CHAINBREAKER_API_TOKEN: ${CHAINBREAKER_API_TOKEN:?Set CHAINBREAKER_API_TOKEN in the shell}
+      CHAINBREAKER_DATABASE_URL: postgresql+psycopg://chainbreaker:${CHAINBREAKER_POSTGRES_PASSWORD}@db:5432/chainbreaker
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - chainbreaker-uploads:/app/runtime/uploads
+      - chainbreaker-reports:/app/runtime/reports
+
+volumes:
+  chainbreaker-postgres:
+  chainbreaker-uploads:
+  chainbreaker-reports:

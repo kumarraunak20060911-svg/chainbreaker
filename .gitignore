@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 runtime/databases/*.sqlite3
 runtime/reports/*.json
+runtime/benchmarks/
 runtime/uploads/*
 !runtime/uploads/.gitkeep
 .opencode/omnirush/inbox/
