@@ -3,6 +3,8 @@
 
 *Hackathon ChronoForge · Track: Cybersecurity · Team: PVR (Kumar Raunak, Vishesh Sharma) · Theme: Cities of the Future*
 
+> 📹 **Project Running Demo Video:** [Watch Full Video Demonstration (Google Drive)](https://drive.google.com/file/d/1TIwZt9zTsLzR9PjJZ_ZIAURQcekt0Dkt/view?usp=sharing)
+
 ChainBreaker is an explainable, read-only security investigation platform built for connected-city infrastructure (traffic signal controllers, EV chargers, CCTV networks, smart campus grids, and municipal operator portals). It correlates multi-source IT and OT activity into a temporal evidence graph, infers the most plausible attack chain, and simulates Pareto-ranked containment options that strictly respect life-safety service limits.
 
 ---
