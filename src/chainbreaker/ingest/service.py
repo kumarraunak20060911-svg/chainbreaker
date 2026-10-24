@@ -21,13 +21,16 @@ def read_rows(path: str | Path | io.TextIOBase) -> list[dict[str, Any]]:
     if not isinstance(path, (str, Path)):
         raw = path.read()
         text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
-        name = str(getattr(path, "name", "")).lower()
-        return [json.loads(line) for line in text.splitlines() if line.strip()] if name.endswith(".jsonl") else list(csv.DictReader(io.StringIO(text)))
-    source = Path(path)
-    if source.suffix.lower() == ".jsonl":
-        return [json.loads(line) for line in source.read_text().splitlines() if line.strip()]
-    with source.open(newline="") as handle:
-        return list(csv.DictReader(handle))
+    else:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    from .universal_adapters import parse_universal_log
+    rows = parse_universal_log(text)
+    if rows:
+        return rows
+    try:
+        return list(csv.DictReader(io.StringIO(text)))
+    except Exception:
+        return []
 
 
 def iter_rows(path: str | Path | io.TextIOBase):

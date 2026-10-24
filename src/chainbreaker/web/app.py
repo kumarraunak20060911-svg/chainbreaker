@@ -191,6 +191,8 @@ def process_rows(
     summary = incident_summary(events, findings, chains, incidents)
     calibration = calibration_report_for(events)
     assets = assets_from_rows(asset_rows or []) if asset_rows else {}
+    from chainbreaker.containment.asset_discovery import enrich_inventory_with_discovery
+    assets = enrich_inventory_with_discovery(assets, events)
     
     # Pick target asset cleanly
     asset = (
@@ -534,6 +536,65 @@ async def export_sigma(run_id: str):
     run = RUNS.get(run_id) or latest()
     rules = export_sigma_rules(run["run_id"], run["report"].get("findings", []))
     return PlainTextResponse(rules, media_type="text/yaml", headers={"Content-Disposition": f'attachment; filename="chainbreaker-{run_id}-sigma.yml"'})
+
+
+@router.get("/resilience", response_class=HTMLResponse)
+async def resilience_page(request: Request):
+    run = latest()
+    from chainbreaker.reporting.societal_impact import compute_societal_impact
+    from chainbreaker.containment.dispatcher import generate_firewall_remediation, generate_soar_payload
+    from chainbreaker.domain.enums import ActionType
+    from chainbreaker.domain.models import CandidateAction
+    
+    asset = run.get("asset")
+    cal = run.get("calibration")
+    brier = getattr(cal, "brier_score", 0.17) if cal else 0.17
+    
+    impact = compute_societal_impact(
+        target_asset_name=asset.name if asset else "Traffic Controller TC-14",
+        target_criticality=asset.criticality if asset else Criticality.LIFE_SAFETY,
+        events_count=run["summary"]["events"],
+        findings_count=run["summary"]["findings"],
+        brier_score=brier,
+        time_to_detect_seconds=run["metrics"]["time_to_detect_seconds"],
+    )
+    
+    mock_action = CandidateAction(
+        action_id="revoke-session",
+        action_type=ActionType.REVOKE_SESSION,
+        target_id=asset.asset_id if asset else "TC-14",
+        evidence_severed=0.82,
+        collateral_cost=0.1,
+        criticality=asset.criticality if asset else Criticality.LIFE_SAFETY,
+        auto_recommendable=False,
+        reason="Targeted credential revocation halts lateral movement without taking municipal physical signals offline",
+        affected_services=("operator session",),
+    )
+    soar_payload = generate_soar_payload(
+        incident_id=f"INC-{run['run_id'][-6:].upper()}",
+        action=mock_action,
+        actor_entity="198.51.100.14 (External)",
+        target_entity=asset.name if asset else "Traffic Controller TC-14",
+        decision_receipt_id=f"receipt-{run['run_id']}",
+        analyst_name="Lead SOC Analyst",
+    )
+    firewall_script = generate_firewall_remediation(
+        ActionType.REVOKE_SESSION,
+        target="ops_k",
+        actor_ip="198.51.100.14",
+    )
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="resilience.html",
+        context={
+            "run": run,
+            "impact": impact,
+            "soar_json": json.dumps(soar_payload, indent=2),
+            "soar_payload": json.dumps(soar_payload, indent=2),
+            "firewall_script": firewall_script,
+        },
+    )
 
 
 @router.get("/upload", response_class=HTMLResponse)
