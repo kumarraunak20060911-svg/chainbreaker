@@ -194,7 +194,7 @@ async def home(request: Request):
 
 @router.get("/upload", response_class=HTMLResponse)
 async def upload_page(request: Request):
-    return templates.TemplateResponse(request=request, name="upload.html", context={})
+    return templates.TemplateResponse(request=request, name="upload.html", context={"run": latest()})
 
 
 @router.post("/upload")
@@ -234,8 +234,8 @@ async def job_page(request: Request, job_id: str):
     from chainbreaker.storage.persistent import get_job
     job = get_job(job_id, DEFAULT_ORGANIZATION_ID, settings=Settings.load())
     if job is None:
-        return templates.TemplateResponse(request=request, name="job.html", context={"job": None}, status_code=404)
-    return templates.TemplateResponse(request=request, name="job.html", context={"job": job})
+        return templates.TemplateResponse(request=request, name="job.html", context={"job": None, "run": latest()}, status_code=404)
+    return templates.TemplateResponse(request=request, name="job.html", context={"job": job, "run": latest()})
 
 
 @router.get("/runs/{run_id}/containment", response_class=HTMLResponse)
@@ -267,3 +267,4 @@ async def replay_page(request: Request, run_id: str):
 async def metrics_page(request: Request):
     run = latest()
     return templates.TemplateResponse(request=request, name="metrics.html", context={"run": run, "metrics": run["metrics"]})
+

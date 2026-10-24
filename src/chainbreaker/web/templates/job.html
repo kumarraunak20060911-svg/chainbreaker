@@ -1,1 +1,93 @@
-{% extends "base.html" %}{% block title %}Ingestion job · ChainBreaker{% endblock %}{% block content %}<div class="page-head"><p class="eyebrow">DURABLE INGESTION JOB</p><h1>{% if job %}{{ job.id }}{% else %}Job not found{% endif %}</h1>{% if job %}<p>Status: <strong>{{ job.status }}</strong> · progress: {{ '%.0f'|format(job.progress * 100) }}%</p><p class="muted">Processed {{ job.processed_events }} · accepted {{ job.accepted_events }} · rejected {{ job.rejected_events }} · duplicates {{ job.duplicate_events }}</p><meta http-equiv="refresh" content="3"></div>{% else %}</div>{% endif %}{% endblock %}
+{% extends "base.html" %}
+{% block title %}Ingestion Job · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="eyebrow">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    DURABLE ASYNCHRONOUS INGESTION WORKER
+  </p>
+  <h1>{% if job %}Job {{ job.id }}{% else %}Job Not Found{% endif %}</h1>
+  {% if job and job.status in ['PENDING', 'RUNNING', 'RETRYING'] %}
+  <meta http-equiv="refresh" content="3">
+  <p>Streaming batch ingestion in progress. This dashboard auto-refreshes every 3 seconds until completed.</p>
+  {% elif job and job.status == 'SUCCEEDED' %}
+  <p style="color: #34d399;">Ingestion and attack chain inference finished successfully.</p>
+  {% elif job %}
+  <p style="color: #fb7185;">Job terminated with status {{ job.status }}.</p>
+  {% endif %}
+</div>
+
+{% if job %}
+<section class="panel" style="max-width: 800px;">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pipeline Execution Status
+      </h2>
+      <p class="panel-subtitle">Idempotent fingerprinting and sliding window analysis</p>
+    </div>
+    
+    <div>
+      {% if job.status == 'SUCCEEDED' %}
+      <span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        SUCCEEDED
+      </span>
+      {% elif job.status == 'RUNNING' %}
+      <span class="status-badge">
+        <span class="pulse-dot"></span>
+        PROCESSING BATCHES
+      </span>
+      {% else %}
+      <span class="tag" style="font-weight: 700;">{{ job.status }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="meter-group" style="margin: 20px 0;">
+    <div class="meter-header">
+      <span>Batch Progress</span>
+      <b style="font-size: 15px;">{{ '%.0f'|format(job.progress * 100) }}%</b>
+    </div>
+    <div class="meter-bar-track" style="height: 10px;">
+      <div class="meter-bar-fill severance" style="width: {{ '%.0f'|format(job.progress * 100) }}%;"></div>
+    </div>
+  </div>
+
+  <div class="grid four" style="margin: 24px 0 16px;">
+    <div class="stat">
+      <span>Processed</span>
+      <strong>{{ job.processed_events }}</strong>
+      <div class="stat-desc">Parsed rows</div>
+    </div>
+    <div class="stat">
+      <span>Accepted</span>
+      <strong style="color: #34d399;">{{ job.accepted_events }}</strong>
+      <div class="stat-desc">Canonical events</div>
+    </div>
+    <div class="stat">
+      <span>Duplicates</span>
+      <strong style="color: #fbbf24;">{{ job.duplicate_events }}</strong>
+      <div class="stat-desc">Pruned by hash</div>
+    </div>
+    <div class="stat">
+      <span>Rejected</span>
+      <strong style="color: #f87171;">{{ job.rejected_events }}</strong>
+      <div class="stat-desc">Schema invalid</div>
+    </div>
+  </div>
+
+  {% if job.status == 'SUCCEEDED' and run %}
+  <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-size: 13px; color: var(--text-secondary);">Incident analysis ready for review:</span>
+    <a href="/runs/{{ run.run_id }}" class="button">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+      Open Incident {{ run.run_id }} →
+    </a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

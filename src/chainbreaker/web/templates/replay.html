@@ -1,1 +1,79 @@
-{% extends "base.html" %}{% block title %}Replay · ChainBreaker{% endblock %}{% block content %}<div class="page-head"><p class="eyebrow">COUNTERFACTUAL REPLAY</p><h1>Simulation only.</h1><p>Re-infer the path after removing a candidate entity. No control command is sent.</p></div><section class="grid three">{% for action_id,replay in replays.items() %}<article class="action-card"><span class="eyebrow">{{ action_id }}</span><h2>{% if replay.contained %}Path contained{% else %}Residual path remains{% endif %}</h2><p>Removed: {{ replay.removed }}</p><p class="muted">Residual paths: {{ replay.residual_paths|length }}</p></article>{% endfor %}</section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Counterfactual Replay · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row">
+  <div>
+    <p class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      COUNTERFACTUAL REPLAY SIMULATION / WHAT-IF TESTING
+    </p>
+    <h1>Graph severance without real-world risk</h1>
+    <p>Simulate re-inferring the kill chain after removing candidate entities or credentials. See if the adversary retains an alternate route before taking action.</p>
+  </div>
+  
+  <div>
+    <a class="button secondary" href="/runs/{{ run.run_id }}/containment">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Back to Planner
+    </a>
+  </div>
+</div>
+
+<div class="warning" style="border-left-color: var(--cyan); background: rgba(6, 182, 212, 0.08);">
+  <div class="warning-icon" style="color: var(--cyan);">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+  </div>
+  <div>
+    <strong style="color: #fff;">In-Memory Graph Subtraction:</strong>
+    <p>Counterfactual simulation removes candidate nodes directly from the topology and executes path search to check if reachable flows to critical assets remain active.</p>
+  </div>
+</div>
+
+<section class="grid three">
+  {% for action_id, replay in replays.items() %}
+  <article class="action-card {% if replay.contained %}recommended{% endif %}">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="action-type-pill">CANDIDATE SEVERANCE</span>
+      <code>{{ action_id }}</code>
+    </div>
+
+    <h2>
+      {% if replay.contained %}
+      <span style="color: #34d399; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Attack Path Contained
+      </span>
+      {% else %}
+      <span style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Residual Path Remains
+      </span>
+      {% endif %}
+    </h2>
+
+    <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); padding: 12px 14px; border-radius: var(--radius-sm);">
+      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); display: block; margin-bottom: 4px;">Simulated Entity Removed</span>
+      <code style="font-size: 13px; color: #fff;">{{ replay.removed }}</code>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border-subtle);">
+      <span style="font-size: 12px; color: var(--text-secondary);">Residual Alternate Paths:</span>
+      <strong style="font-family: var(--font-mono); font-size: 16px; color: {% if replay.residual_paths|length == 0 %}#34d399{% else %}#fbbf24{% endif %};">
+        {{ replay.residual_paths|length }}
+      </strong>
+    </div>
+
+    {% if replay.residual_paths %}
+    <div style="font-size: 11px; color: var(--text-muted); background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: var(--radius-sm);">
+      Adversary can still traverse unsevered intermediate nodes to reach target assets.
+    </div>
+    {% else %}
+    <div style="font-size: 11px; color: #34d399; background: rgba(16, 185, 129, 0.08); padding: 8px; border-radius: var(--radius-sm);">
+      Removing this entity fully breaks all viable paths to downstream municipal controllers.
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

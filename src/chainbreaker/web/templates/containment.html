@@ -1,1 +1,220 @@
-{% extends "base.html" %}{% block title %}Containment · ChainBreaker{% endblock %}{% block content %}<div class="page-head"><p class="eyebrow">WHAT-IF CONTAINMENT / READ-ONLY</p><h1>Stop the path without stopping the city.</h1><p>The planner compares evidence severed against collateral cost. Nothing is executed.</p></div><div class="warning"><strong>Safety guardrail:</strong> TC-14 is tagged life-safety. Direct isolation is shown for comparison but is not eligible for automatic recommendation.</div><section class="grid three">{% for action in plan.frontier %}<article class="action-card {% if action.action_id == plan.recommended_action_id %}recommended{% endif %} {% if not action.auto_recommendable %}blocked{% endif %}"><span class="eyebrow">{{ action.action_type }}</span><h2>{{ action.target_id }}</h2><div class="metric-row"><div><b>{{ '%.0f'|format(action.evidence_severed*100) }}%</b><span>evidence severed</span></div><div><b>{{ action.collateral_cost }}</b><span>collateral index</span></div></div><p>{{ action.reason }}</p><p class="muted">Affected: {{ action.affected_services|join(', ') }}</p>{% if action.action_id == plan.recommended_action_id %}<strong class="recommend">RECOMMENDED FOR REVIEW</strong>{% elif not action.auto_recommendable %}<strong class="severity high">BLOCKED FROM AUTO-RECOMMENDATION</strong>{% endif %}</article>{% endfor %}</section><p><a class="button secondary" href="/runs/{{ run.run_id }}/replay">Open counterfactual replay</a></p>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Containment Planner · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row">
+  <div>
+    <p class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      WHAT-IF CONTAINMENT SIMULATION / READ-ONLY DEFENSE
+    </p>
+    <h1>Stop the path without stopping the city.</h1>
+    <p>The planner compares attack evidence severed against collateral public-service disruption across the Pareto frontier. No commands are dispatched to devices.</p>
+  </div>
+  
+  <div>
+    <a class="button secondary" href="/runs/{{ run.run_id }}/replay">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run Counterfactual Replay
+    </a>
+  </div>
+</div>
+
+<div class="warning">
+  <div class="warning-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </div>
+  <div>
+    <strong>Safety Guardrail Active:</strong> Target <code>TC-14</code> is tagged as <strong>LIFE-SAFETY</strong> (Traffic Signal Controller).
+    <p>Direct controller isolation is shown for comparative trade-off inspection only and is strictly barred from automated recommendation to prevent real-world physical traffic accidents.</p>
+  </div>
+</div>
+
+<div class="panel-header" style="margin-top: 10px; border-bottom: none;">
+  <div>
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+      Pareto-Optimal Candidate Frontier
+    </h2>
+    <p class="panel-subtitle">Ranked vertex cuts balancing path disruption against municipal service continuity</p>
+  </div>
+</div>
+
+<section class="grid three">
+  {% for action in plan.frontier %}
+  <article class="action-card {% if action.action_id == plan.recommended_action_id %}recommended{% endif %} {% if not action.auto_recommendable %}blocked{% endif %}">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <span class="action-type-pill">{{ action.action_type }}</span>
+      <span class="tag" style="font-family: var(--font-mono); font-size: 10px;">{{ action.action_id }}</span>
+    </div>
+
+    <h2>{{ action.target_id }}</h2>
+
+    <div class="meter-group">
+      <div class="meter-item">
+        <div class="meter-header">
+          <span>Evidence Severed</span>
+          <b>{{ '%.0f'|format(action.evidence_severed * 100) }}%</b>
+        </div>
+        <div class="meter-bar-track">
+          <div class="meter-bar-fill severance" style="width: {{ '%.0f'|format(action.evidence_severed * 100) }}%;"></div>
+        </div>
+      </div>
+
+      <div class="meter-item">
+        <div class="meter-header">
+          <span>Collateral Disruption Index</span>
+          <b style="color: #fbbf24;">{{ action.collateral_cost }} / 10.0</b>
+        </div>
+        <div class="meter-bar-track">
+          <div class="meter-bar-fill collateral" style="width: {{ [action.collateral_cost * 10, 100]|min }}%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">{{ action.reason }}</p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto;">
+      <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Affected:</span>
+      {% for service in action.affected_services %}
+      <span class="tag">{{ service }}</span>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+      {% if action.action_id == plan.recommended_action_id %}
+      <div class="recommend-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        OPTIMAL PARETO CHOICE
+      </div>
+      {% elif not action.auto_recommendable %}
+      <div class="blocked-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        LOCKED · LIFE-SAFETY HAZARD
+      </div>
+      {% else %}
+      <span class="tag">Alternative Candidate</span>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<!-- Human-in-the-Loop Analyst Decision Receipt Section -->
+<section class="panel decision-panel">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Human-in-the-Loop Decision Recording
+      </h2>
+      <p class="panel-subtitle">Log an auditable governance receipt. Zero network actions will be executed.</p>
+    </div>
+    <span class="status-badge" style="font-size: 10px;">Audit Logged</span>
+  </div>
+
+  <form id="decisionForm" onsubmit="submitDecision(event)">
+    <div class="decision-form">
+      <div class="form-group">
+        <label for="actionSelect">Target Action</label>
+        <select id="actionSelect" class="decision-select">
+          {% for action in plan.frontier %}
+          <option value="{{ action.action_id }}" {% if action.action_id == plan.recommended_action_id %}selected{% endif %}>
+            {{ action.action_id }} · {{ action.target_id }} ({{ action.action_type }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="analystId">Analyst Identity</label>
+        <input type="text" id="analystId" class="decision-input" value="analyst-central-soc" required>
+      </div>
+
+      <div class="form-group">
+        <label for="decisionType">Verdict</label>
+        <select id="decisionType" class="decision-select">
+          <option value="approved">Approved</option>
+          <option value="deferred" selected>Deferred for Investigation</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="decisionReason">Justification Note</label>
+        <input type="text" id="decisionReason" class="decision-input" placeholder="e.g. Verified gateway anomaly with traffic ops" required>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 14px;">
+      <label class="checkbox-wrap">
+        <input type="checkbox" id="onSiteOperator">
+        <span>Dual On-Site Operator Authorization (Mandatory for Life-Safety overrides)</span>
+      </label>
+
+      <button type="submit" class="button" id="submitBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Submit Decision Receipt
+      </button>
+    </div>
+  </form>
+
+  <div id="receiptResult" style="display: none; margin-top: 20px;"></div>
+</section>
+
+<script>
+async function submitDecision(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const resultDiv = document.getElementById('receiptResult');
+  btn.disabled = true;
+  btn.innerText = 'Logging receipt...';
+
+  const payload = {
+    action_id: document.getElementById('actionSelect').value,
+    actor: document.getElementById('analystId').value,
+    decision: document.getElementById('decisionType').value,
+    reason: document.getElementById('decisionReason').value,
+    on_site_operator: document.getElementById('onSiteOperator').checked
+  };
+
+  try {
+    const res = await fetch('/api/incidents/{{ run.run_id }}/containment/decisions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      resultDiv.innerHTML = `<div class="warning"><strong>Error:</strong> ${data.detail || 'Could not record decision'}</div>`;
+    } else {
+      resultDiv.innerHTML = `
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="color: #34d399; display: flex; align-items: center; gap: 6px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Cryptographic Human Decision Receipt Recorded
+            </strong>
+            <code>${data.decision_id}</code>
+          </div>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+            Action <b>${data.action_id}</b> recorded as <b>${data.decision.toUpperCase()}</b> by <code>${data.actor}</code>.
+          </p>
+          <div style="font-size: 11px; color: var(--text-muted); display: flex; gap: 16px;">
+            <span>Timestamp: ${data.created_at}</span>
+            <span style="color: #38bdf8;">Executed: False (Simulation Protection Guaranteed)</span>
+          </div>
+        </div>
+      `;
+    }
+    resultDiv.style.display = 'block';
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="warning"><strong>Network Error:</strong> ${err.message}</div>`;
+    resultDiv.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg> Submit Decision Receipt';
+  }
+}
+</script>
+{% endblock %}

@@ -7,3 +7,6 @@ runtime/benchmarks/
 runtime/uploads/*
 !runtime/uploads/.gitkeep
 .opencode/omnirush/inbox/
+*.egg-info/
+dist/
+build/

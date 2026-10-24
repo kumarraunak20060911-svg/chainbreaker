@@ -1,12 +1,103 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}ChainBreaker{% endblock %}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ChainBreaker · Cyber Defense Workbench{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <header class="topbar"><div class="brand">CHAINBREAKER <span>SAFETY-AWARE INCIDENT RECONSTRUCTION</span></div><nav><a href="/">Home</a><a href="/metrics">Metrics</a><a href="/upload">Upload</a></nav><div class="status">READ-ONLY ANALYSIS</div></header>
-  <main class="shell">{% block content %}{% endblock %}</main>
-  <footer>ChainBreaker · synthetic or explicitly authorized logs only · no real-world action executed</footer>
-</body></html>
+  <header class="topbar">
+    <a href="/" class="brand-wrap">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <div class="brand-name">
+          CHAINBREAKER
+          <span style="font-size: 10px; opacity: 0.6; font-weight: 500;">v0.2.0</span>
+        </div>
+        <div class="brand-tag">SAFETY-AWARE INCIDENT RECONSTRUCTION</div>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Workbench
+      </a>
+      {% if run %}
+      <a href="/runs/{{ run.run_id }}" class="nav-link {% if '/runs/' in request.url.path %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+        Active Incident
+      </a>
+      {% endif %}
+      <a href="/metrics" class="nav-link {% if request.url.path == '/metrics' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Benchmarks
+      </a>
+      <a href="/upload" class="nav-link {% if request.url.path == '/upload' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Intake Logs
+      </a>
+    </nav>
+
+    <div class="topbar-actions">
+      <div class="status-badge">
+        <span class="pulse-dot"></span>
+        Read-Only Simulation
+      </div>
+    </div>
+  </header>
+
+  {% if run %}
+  <nav class="context-bar" aria-label="Incident Navigation">
+    <div class="context-meta">
+      <span class="incident-id-pill">{{ run.run_id }}</span>
+      <span class="asset-pill">
+        Target: <strong style="color: #fff; margin-left: 4px;">{{ run.asset.name if run.asset else 'TC-14 (Signal Controller)' }}</strong>
+        <span class="criticality-tag life-safety">LIFE-SAFETY</span>
+      </span>
+    </div>
+
+    <div class="incident-tabs">
+      <a href="/runs/{{ run.run_id }}" class="incident-tab {% if request.url.path == '/runs/' ~ run.run_id %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Overview
+      </a>
+      <a href="/runs/{{ run.run_id }}/containment" class="incident-tab {% if '/containment' in request.url.path %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Containment Planner
+      </a>
+      <a href="/runs/{{ run.run_id }}/evidence" class="incident-tab {% if '/evidence' in request.url.path %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Evidence Links
+      </a>
+      <a href="/runs/{{ run.run_id }}/replay" class="incident-tab {% if '/replay' in request.url.path %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Replay Simulation
+      </a>
+      <a href="/runs/{{ run.run_id }}/report" class="incident-tab {% if '/report' in request.url.path %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Audit Report
+      </a>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="shell">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p><strong>ChainBreaker Security Platform</strong> · Deterministic Reconstruction & Safety-Tiered Containment Simulation</p>
+    <p>Analysis executed on synthetic or authorized telemetry · Zero real-world accounts or devices are ever altered or blocked</p>
+  </footer>
+</body>
+</html>

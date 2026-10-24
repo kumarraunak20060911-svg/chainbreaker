@@ -1,1 +1,146 @@
-{% extends "base.html" %}{% block title %}Evidence · ChainBreaker{% endblock %}{% block content %}<div class="page-head"><p class="eyebrow">EVIDENCE INSPECTOR</p><h1>Why these events are linked</h1><p>Every link is inspectable. The probability is a calibrated link probability, not a claim of compromise.</p></div><section class="panel">{{ graph|safe }}</section><section class="panel"><table><tr><th>Entity</th><th>Weight</th><th>Probability</th><th>Rarity p</th><th>Decay</th><th>Time gap</th><th>Controls</th><th>Rows</th></tr>{% for link in run.links %}<tr><td><code>{{ link.entity_type }}</code></td><td>{{ '%.3f'|format(link.weight) }}</td><td>{{ '%.3f'|format(link.probability) }}</td><td>{{ '%.3f'|format(link.entity_probability) }}</td><td>{{ '%.3f'|format(link.time_decay) }}</td><td>{{ link.delta_seconds }}s</td><td>{{ 'NAT down-weighted' if link.nat_penalty_applied else 'rare external-IP boost' if link.external_ip_boost_applied else link.calibration_status }}</td><td>{{ link.row_ids|join(', ') }}</td></tr>{% endfor %}</table></section><section class="panel"><h2>Normalization corrections</h2>{% if run.corrections %}<ul>{% for correction in run.corrections %}<li>{{ correction }}</li>{% endfor %}</ul>{% else %}<p class="muted">No alias candidates were inferred.</p>{% endif %}</section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Evidence Inspector · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row">
+  <div>
+    <p class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      EVIDENCE REASONING & ISOTONIC CALIBRATION
+    </p>
+    <h1>Why these events are linked</h1>
+    <p>Every link is fully inspectable. Calibrated probabilities reflect evidence likelihood conditioned on frequency and timing, not an arbitrary verdict of guilt.</p>
+  </div>
+  
+  <div style="display: flex; gap: 10px;">
+    <a class="button secondary" href="/runs/{{ run.run_id }}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to Incident
+    </a>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Evidence Graph Topology
+      </h2>
+      <p class="panel-subtitle">Weighted bipartite links between observed events</p>
+    </div>
+  </div>
+  {{ graph|safe }}
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Calibrated Evidence Link Ledger ({{ run.links|length }} links)
+      </h2>
+      <p class="panel-subtitle">Pairwise event associations with Bayesian controls, time decay, and source rows</p>
+    </div>
+
+    <div class="filter-bar" style="margin: 0;">
+      <input type="text" id="linkSearch" class="search-input" placeholder="Search entity, control, or row ID..." oninput="filterLinks()">
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table id="linksTable">
+      <thead>
+        <tr>
+          <th>Entity Type & Value</th>
+          <th style="width: 130px;">Probability</th>
+          <th>Weight</th>
+          <th>Rarity <i>p</i></th>
+          <th>Time Decay</th>
+          <th>Time Gap (Δt)</th>
+          <th>Statistical Controls</th>
+          <th>Source Row IDs</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for link in run.links %}
+        <tr>
+          <td>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <code>{{ link.entity_type }}</code>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary);">{{ link.entity_value }}</span>
+            </div>
+          </td>
+          <td>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-family: var(--font-mono); font-weight: 700; color: {% if link.probability >= 0.7 %}#22d3ee{% elif link.probability >= 0.4 %}#818cf8{% else %}#94a3b8{% endif %};">
+                {{ '%.3f'|format(link.probability) }} ({{ '%.0f'|format(link.probability * 100) }}%)
+              </span>
+              <div class="meter-bar-track" style="height: 4px; width: 80px;">
+                <div class="meter-bar-fill severance" style="width: {{ '%.0f'|format(link.probability * 100) }}%; background: {% if link.probability >= 0.7 %}#22d3ee{% else %}#818cf8{% endif %};"></div>
+              </div>
+            </div>
+          </td>
+          <td style="font-family: var(--font-mono);">{{ '%.3f'|format(link.weight) }}</td>
+          <td style="font-family: var(--font-mono); color: var(--text-secondary);">{{ '%.3f'|format(link.entity_probability) }}</td>
+          <td style="font-family: var(--font-mono); color: var(--text-secondary);">{{ '%.3f'|format(link.time_decay) }}</td>
+          <td style="font-family: var(--font-mono);">{{ link.delta_seconds }}s</td>
+          <td>
+            {% if link.nat_penalty_applied %}
+            <span class="tag penalty">NAT down-weighted</span>
+            {% elif link.external_ip_boost_applied %}
+            <span class="tag boost">Rare external-IP boost</span>
+            {% else %}
+            <span class="tag">{{ link.calibration_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-chips">
+              {% for rid in link.row_ids %}
+              <span class="row-chip">{{ rid }}</span>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+        Normalization & Identity Resolution Corrections
+      </h2>
+      <p class="panel-subtitle">Inferred alias unification across disparate directory and gateway schemas</p>
+    </div>
+  </div>
+
+  {% if run.corrections %}
+  <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
+    {% for correction in run.corrections %}
+    <li style="display: flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 12px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ correction }}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color: var(--text-muted);">No ambiguous alias candidates required normalization.</p>
+  {% endif %}
+</section>
+
+<script>
+function filterLinks() {
+  const query = document.getElementById('linkSearch').value.toLowerCase();
+  const rows = document.querySelectorAll('#linksTable tbody tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
