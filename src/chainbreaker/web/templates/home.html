@@ -14,18 +14,39 @@
     </p>
     
     <div class="hero-actions">
+      <a class="button" href="/recreate" style="background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; box-shadow: 0 4px 14px rgba(244,63,94,0.35);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Recreate Attack Live
+      </a>
       <a class="button" href="/runs/{{ run.run_id }}">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
-        Investigate Demo Incident
+        Investigate Active Run
       </a>
-      <a class="button secondary" href="/runs/{{ run.run_id }}/containment">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Containment Planner
+      <a class="button secondary" href="/scenarios">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        City Scenarios
       </a>
       <a class="button secondary" href="/upload">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Intake Logs
       </a>
+    </div>
+
+    <!-- 5-Step Judges Evaluation Guide Pill -->
+    <div style="margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 999px; flex-wrap: wrap;">
+      <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #38bdf8;"></span>
+        JUDGES 5-STEP DEMO:
+      </span>
+      <a href="/recreate" style="font-size: 11.5px; color: #fff; text-decoration: none; font-weight: 600;">1. Recreate</a>
+      <span style="color: var(--text-muted); font-size: 11px;">→</span>
+      <a href="/runs/{{ run.run_id }}" style="font-size: 11.5px; color: #fff; text-decoration: none; font-weight: 600;">2. Kill Chain</a>
+      <span style="color: var(--text-muted); font-size: 11px;">→</span>
+      <a href="/runs/{{ run.run_id }}/toggle-linking" style="font-size: 11.5px; color: #fbbf24; text-decoration: none; font-weight: 700;">3. Toggle Naive Mode</a>
+      <span style="color: var(--text-muted); font-size: 11px;">→</span>
+      <a href="/runs/{{ run.run_id }}/containment" style="font-size: 11.5px; color: #fff; text-decoration: none; font-weight: 600;">4. Pareto Plan</a>
+      <span style="color: var(--text-muted); font-size: 11px;">→</span>
+      <a href="/runs/{{ run.run_id }}/report" style="font-size: 11.5px; color: #34d399; text-decoration: none; font-weight: 600;">5. Merkle Root</a>
     </div>
   </div>
 
