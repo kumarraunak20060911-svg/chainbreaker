@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 def central_district_rows() -> list[dict[str, object]]:
+    """Scenario 1: Municipal Traffic Controller Intrusion (Central District).
+    Attacker conducts password spray, logs into operator account via VPN, pivots to IoT gateway,
+    issues off-window set-phase control command to traffic controller TC-14, and initiates DNS beaconing.
+    """
     start = datetime(2026, 10, 24, 2, 10, tzinfo=timezone.utc)
     return [
         {"event_id": "evt-001", "row_id": "row-001", "timestamp": start.isoformat(), "source": "auth", "event_type": "login_failure", "account": "ops_k", "ip": "10.20.0.8", "success": "false"},
@@ -22,16 +26,25 @@ def central_district_rows() -> list[dict[str, object]]:
 
 
 def camera_to_charger_rows() -> list[dict[str, object]]:
+    """Scenario 2: Hijacked CCTV Camera Pivot to EV Charger Grid (Section 8 of Proposal).
+    Attacker compromises perimeter camera CAM-22, beacons to rare domain trusted-update.example,
+    and reaches fast-charger manager EV-08 to inject start-charge command.
+    """
     start = datetime(2026, 10, 24, 3, 10, tzinfo=timezone.utc)
     return [
-        {"event_id": "cam-001", "row_id": "cam-row-001", "timestamp": start.isoformat(), "source": "iot", "event_type": "camera_telemetry", "device_id": "CAM-22", "device_class": "camera", "peer": "camera-gateway", "payload_size": "64", "command": "telemetry"},
-        {"event_id": "cam-002", "row_id": "cam-row-002", "timestamp": (start + timedelta(minutes=5)).isoformat(), "source": "iot", "event_type": "camera_beacon", "device_id": "CAM-22", "device_class": "camera", "peer": "rare-domain", "payload_size": "512", "command": "telemetry", "domain": "trusted-update.example"},
-        {"event_id": "cam-003", "row_id": "cam-row-003", "timestamp": (start + timedelta(minutes=6)).isoformat(), "source": "iot", "event_type": "charger_manager_access", "device_id": "EV-08", "device_class": "ev-charger", "peer": "CAM-22", "payload_size": "900", "command": "start-charge"},
+        {"event_id": "cam-001", "row_id": "cam-row-001", "timestamp": start.isoformat(), "source": "iot", "event_type": "camera_telemetry", "device_id": "CAM-22", "device_class": "camera", "peer": "camera-gateway", "payload_size": "64", "command": "telemetry", "account": "cam-service"},
+        {"event_id": "cam-002", "row_id": "cam-row-002", "timestamp": (start + timedelta(minutes=3)).isoformat(), "source": "dns", "event_type": "dns_query", "host": "CAM-22", "device_id": "CAM-22", "domain": "trusted-update.example", "first_seen": "true"},
+        {"event_id": "cam-003", "row_id": "cam-row-003", "timestamp": (start + timedelta(minutes=5)).isoformat(), "source": "iot", "event_type": "camera_beacon", "device_id": "CAM-22", "device_class": "camera", "peer": "rare-domain", "payload_size": "512", "command": "telemetry", "domain": "trusted-update.example"},
+        {"event_id": "cam-004", "row_id": "cam-row-004", "timestamp": (start + timedelta(minutes=6)).isoformat(), "source": "iot", "event_type": "charger_manager_access", "device_id": "EV-08", "device_class": "ev-charger", "peer": "CAM-22", "payload_size": "900", "command": "start-charge"},
+        {"event_id": "cam-005", "row_id": "cam-row-005", "timestamp": (start + timedelta(minutes=8)).isoformat(), "source": "iot", "event_type": "control_command", "device_id": "EV-08", "device_class": "ev-charger", "peer": "CAM-22", "payload_size": "2048", "command": "max-draw-override"},
     ]
 
 
 def university_security_rows() -> list[dict[str, object]]:
-    """Synthetic, explicitly labelled university-like activity with benign near misses."""
+    """Scenario 3: University Infrastructure Intrusion (Section 8 of Proposal).
+    Student credential access via campus-NAT, VPN access, grade portal traversal,
+    DNS beaconing, cleanroom camera unauthorized export, and faculty password spraying.
+    """
     start = datetime(2026, 10, 24, 9, 0, tzinfo=timezone.utc)
     rows: list[dict[str, object]] = [
         {"event_id": "uni-001", "row_id": "uni-row-001", "timestamp": start.isoformat(), "source": "auth", "event_type": "login_success", "account": "student-42", "ip": "10.10.0.5", "success": "true", "network_zone": "campus-nat"},
@@ -42,10 +55,31 @@ def university_security_rows() -> list[dict[str, object]]:
         {"event_id": "uni-006", "row_id": "uni-row-006", "timestamp": (start + timedelta(minutes=6)).isoformat(), "source": "iot", "event_type": "camera_control", "device_id": "LAB-CAM-7", "device_class": "camera", "peer": "unknown-external-peer", "command": "export-recording", "payload_size": "2048"},
     ]
     rows.extend({"event_id": f"uni-spray-{index}", "row_id": f"uni-spray-row-{index}", "timestamp": (start + timedelta(minutes=10, seconds=index * 8)).isoformat(), "source": "auth", "event_type": "login_failure", "account": f"faculty-{index}", "ip": "198.51.100.44", "success": "false", "network_zone": "internet"} for index in range(1, 6))
-    rows.append(dict(rows[-1], event_id="uni-duplicate", row_id="uni-duplicate-row"))
-    rows.append({"event_id": "uni-late", "row_id": "uni-late-row", "timestamp": (start - timedelta(minutes=2)).isoformat(), "source": "dns", "event_type": "dns_query", "host": "lab-workstation-7", "domain": "updates.university.example"})
-    rows.append({"event_id": "uni-malformed", "row_id": "uni-malformed-row", "timestamp": "not-a-timestamp", "source": "auth", "event_type": "login_failure"})
     return rows
+
+
+def central_district_with_nat_surge_rows() -> list[dict[str, object]]:
+    """Judges Demo Dataset: Central District attack interleaved with a benign public Wi-Fi NAT surge.
+    Under Naive Linking, the 8 benign visitors on 10.0.0.40 falsely merge into the attack chain.
+    Under Probabilistic Linking, the Fellegi-Sunter NAT penalty down-weights 10.0.0.40 and purges false merges.
+    """
+    rows = list(central_district_rows())
+    start = datetime(2026, 10, 24, 2, 12, tzinfo=timezone.utc)
+    # Add 8 benign visitors sharing public Wi-Fi NAT IP 10.0.0.40
+    for i in range(8):
+        rows.append({
+            "event_id": f"wifi-nat-{i}",
+            "row_id": f"wifi-row-{i}",
+            "timestamp": (start + timedelta(seconds=i * 20)).isoformat(),
+            "source": "auth",
+            "event_type": "login_success",
+            "account": f"citizen-{i}",
+            "ip": "10.0.0.40",
+            "network_zone": "public-wifi",
+            "public_wifi_nat": "true",
+            "success": "true",
+        })
+    return sorted(rows, key=lambda r: str(r["timestamp"]))
 
 
 def write_central_district(directory: str | Path) -> None:

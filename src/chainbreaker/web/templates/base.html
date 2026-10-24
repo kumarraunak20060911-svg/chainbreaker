@@ -1,17 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}ChainBreaker · Cyber Defense Workbench{% endblock %}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ChainBreaker · Safety-Aware Incident Reconstruction{% endblock %}</title>
+  <link rel="stylesheet" href="/static/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Global Topbar Navigation -->
   <header class="topbar">
-    <a href="/" class="brand-wrap">
+    <a href="/" class="brand">
       <div class="brand-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -29,75 +30,103 @@
 
     <nav class="nav-links">
       <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Workbench
+      </a>
+      <a href="/recreate" class="nav-link {% if request.url.path == '/recreate' %}active{% endif %}" style="color: #f43f5e; font-weight: 600;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Recreate Attack
+      </a>
+      <a href="/scenarios" class="nav-link {% if request.url.path == '/scenarios' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Scenarios
       </a>
       {% if run %}
       <a href="/runs/{{ run.run_id }}" class="nav-link {% if '/runs/' in request.url.path %}active{% endif %}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
-        Active Incident
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+        Active Run
       </a>
       {% endif %}
+      <a href="/evasion" class="nav-link {% if request.url.path == '/evasion' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Evasion Lab
+      </a>
       <a href="/metrics" class="nav-link {% if request.url.path == '/metrics' %}active{% endif %}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
         Benchmarks
       </a>
+      <a href="/database" class="nav-link {% if request.url.path == '/database' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Database
+      </a>
+      <a href="/history" class="nav-link {% if request.url.path == '/history' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Archive
+      </a>
       <a href="/upload" class="nav-link {% if request.url.path == '/upload' %}active{% endif %}">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Intake Logs
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Intake
       </a>
     </nav>
 
     <div class="topbar-actions">
-      <div class="status-badge">
-        <span class="pulse-dot"></span>
-        Read-Only Simulation
-      </div>
+      <a href="/database" style="text-decoration: none;">
+        <div class="status-badge" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); color: #4ade80;">
+          <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+          DB: CONNECTED
+        </div>
+      </a>
     </div>
   </header>
 
-  {% if run %}
-  <nav class="context-bar" aria-label="Incident Navigation">
-    <div class="context-meta">
-      <span class="incident-id-pill">{{ run.run_id }}</span>
-      <span class="asset-pill">
-        Target: <strong style="color: #fff; margin-left: 4px;">{{ run.asset.name if run.asset else 'TC-14 (Signal Controller)' }}</strong>
-        <span class="criticality-tag life-safety">LIFE-SAFETY</span>
+  <!-- Secondary Incident Bar if inside an active incident view -->
+  {% if incident %}
+  <div class="incident-bar">
+    <div class="incident-bar-info">
+      <span class="incident-id-tag">{{ incident.incident_id }}</span>
+      <span class="incident-sep">/</span>
+      <span class="incident-title-text">{{ incident.title }}</span>
+      <span class="incident-sep">/</span>
+      <span class="badge badge-danger">SEV-1 CRITICAL</span>
+      <span class="badge" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; font-weight: 700;">
+        TARGET: {{ run.asset.criticality.value|upper }}
       </span>
+      {% if run and run.naive_linking %}
+      <span class="badge badge-warning" style="font-weight: 700;">
+        JUDGES DEMO: NAIVE LINKING ACTIVE (FALSE MERGES VISIBLE)
+      </span>
+      {% endif %}
     </div>
 
     <div class="incident-tabs">
-      <a href="/runs/{{ run.run_id }}" class="incident-tab {% if request.url.path == '/runs/' ~ run.run_id %}active{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Overview
-      </a>
-      <a href="/runs/{{ run.run_id }}/containment" class="incident-tab {% if '/containment' in request.url.path %}active{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Containment Planner
-      </a>
-      <a href="/runs/{{ run.run_id }}/evidence" class="incident-tab {% if '/evidence' in request.url.path %}active{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        Evidence Links
-      </a>
-      <a href="/runs/{{ run.run_id }}/replay" class="incident-tab {% if '/replay' in request.url.path %}active{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Replay Simulation
-      </a>
-      <a href="/runs/{{ run.run_id }}/report" class="incident-tab {% if '/report' in request.url.path %}active{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Audit Report
-      </a>
+      <a href="/incidents/{{ incident.incident_id }}" class="tab-link {% if request.url.path == '/incidents/' ~ incident.incident_id %}active{% endif %}">Graph & Kill Chain</a>
+      <a href="/incidents/{{ incident.incident_id }}/containment" class="tab-link {% if '/containment' in request.url.path %}active{% endif %}">Pareto Containment</a>
+      <a href="/incidents/{{ incident.incident_id }}/evidence" class="tab-link {% if '/evidence' in request.url.path %}active{% endif %}">Evidence & Calibration</a>
+      <a href="/incidents/{{ incident.incident_id }}/replay" class="tab-link {% if '/replay' in request.url.path %}active{% endif %}">Counterfactual Replay</a>
+      <a href="/incidents/{{ incident.incident_id }}/report" class="tab-link {% if '/report' in request.url.path %}active{% endif %}">Merkle Case Report</a>
     </div>
-  </nav>
+  </div>
   {% endif %}
 
-  <main class="shell">
+  <!-- Main View Container -->
+  <main class="main-container">
     {% block content %}{% endblock %}
   </main>
 
-  <footer>
-    <p><strong>ChainBreaker Security Platform</strong> · Deterministic Reconstruction & Safety-Tiered Containment Simulation</p>
-    <p>Analysis executed on synthetic or authorized telemetry · Zero real-world accounts or devices are ever altered or blocked</p>
+  <!-- Global Footer -->
+  <footer class="app-footer">
+    <div>
+      <strong>ChainBreaker</strong> · Hackathon ChronoForge · Cybersecurity Track · Team PVR (Kumar Raunak, Vishesh Sharma)
+    </div>
+    <div style="display: flex; gap: 16px;">
+      <span>Fellegi-Sunter Linking</span>
+      <span>•</span>
+      <span>Stage-Aware Viterbi Paths</span>
+      <span>•</span>
+      <span>Pareto Min-Cut Safety Planner</span>
+      <span>•</span>
+      <span>Merkle-Verified Evidence</span>
+    </div>
   </footer>
 </body>
 </html>

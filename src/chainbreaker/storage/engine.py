@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -22,22 +23,25 @@ def get_engine(database_url: str) -> Engine:
 
 def session_factory(settings: Settings | None = None) -> sessionmaker[Session]:
     current = settings or Settings.load()
-    if current.environment == "test":
-        initialize_schema(current)
+    initialize_schema(current)
     return sessionmaker(bind=get_engine(current.resolved_database_url()), expire_on_commit=False, autoflush=False)
 
 
 def dependency_health(settings: Settings | None = None) -> dict[str, object]:
     current = settings or Settings.load()
+    backend = current.resolved_database_url().split(":", 1)[0]
     try:
         with get_engine(current.resolved_database_url()).connect() as connection:
             connection.execute(text("SELECT 1"))
-        return {"status": "ok", "database": "reachable", "backend": current.resolved_database_url().split(":", 1)[0]}
+        return {"status": "ok", "database": "reachable", "backend": backend}
     except Exception as exc:
-        return {"status": "degraded", "database": "unreachable", "backend": current.resolved_database_url().split(":", 1)[0], "error_type": type(exc).__name__}
+        return {"status": "degraded", "database": "unreachable", "backend": backend, "error_type": type(exc).__name__}
 
 
 def initialize_schema(settings: Settings | None = None) -> None:
     current = settings or Settings.load()
-    if current.environment == "test":
-        Base.metadata.create_all(get_engine(current.resolved_database_url()))
+    url = current.resolved_database_url()
+    if "sqlite" in url:
+        Path("runtime/databases").mkdir(parents=True, exist_ok=True)
+    engine = get_engine(url)
+    Base.metadata.create_all(engine)

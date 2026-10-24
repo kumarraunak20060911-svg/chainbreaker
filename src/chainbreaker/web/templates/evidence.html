@@ -2,6 +2,37 @@
 {% block title %}Evidence Inspector · ChainBreaker{% endblock %}
 
 {% block content %}
+<!-- Judges Demo Step 3 Toggle Banner -->
+{% if run.naive_linking %}
+<div class="warning" style="margin-bottom: 24px; border-left-color: var(--amber); background: rgba(245, 158, 11, 0.08);">
+  <div class="warning-icon" style="color: var(--amber);">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </div>
+  <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <strong style="color: #fbbf24;">Judges Demo (Step 3): Naive Field Matching Mode Active</strong>
+      <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
+        Notice how all shared entities get equal uncalibrated weights without rarity or NAT penalties.
+      </p>
+    </div>
+    <a href="/runs/{{ run.run_id }}/toggle-linking" class="button" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 12px; padding: 6px 14px;">
+      ✓ Enable Fellegi-Sunter Weighted Linking
+    </a>
+  </div>
+</div>
+{% else %}
+<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(6, 182, 212, 0.06); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span class="tag boost" style="font-size: 11px;">JUDGES DEMO #3</span>
+    <span style="font-size: 13px; color: var(--text-primary);">
+      <strong>Fellegi-Sunter Probabilistic Weighting Active:</strong> Rare external IPs receive evidence boosts while shared NAT addresses receive a 97% penalty.
+    </span>
+  </div>
+  <a href="/runs/{{ run.run_id }}/toggle-linking" class="button secondary" style="font-size: 11px; padding: 5px 12px;">
+    ⇄ Test Naive SIEM Mode (Show False Merges)
+  </a>
+</div>
+{% endif %}
 <div class="page-head row">
   <div>
     <p class="eyebrow">

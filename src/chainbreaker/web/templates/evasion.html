@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Red-Team Evasion Lab · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row">
+  <div>
+    <p class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      RED-TEAM ADVERSARY TESTING / RULE HARDENING (SECTION 4.E)
+    </p>
+    <h1>Adversarial Evasion Simulation</h1>
+    <p>Simulate an intelligent adversary adjusting query rate, inter-arrival jitter, and trusted-domain camouflage. ChainBreaker uses hill-climbing search to find evasion thresholds and harden the statistical detectors.</p>
+  </div>
+</div>
+
+<section class="grid three" style="margin-bottom: 24px;">
+  <div class="stat">
+    <span>Baseline Detection</span>
+    <strong style="color: #34d399;">{{ adversary.baseline.findings_count }} Findings</strong>
+    <div class="stat-desc">Standard naive attack (rate=1.0x, jitter=0s)</div>
+  </div>
+
+  <div class="stat">
+    <span>Hill-Climbed Optimal Evasion</span>
+    <strong style="color: #fbbf24;">Rate: {{ '%.2f'|format(adversary.adversary_optimal.rate) }}x</strong>
+    <div class="stat-desc">Jitter: {{ '%.1f'|format(adversary.adversary_optimal.jitter_seconds) }}s | Trusted C2: {{ 'Active' if adversary.adversary_optimal.trusted_domain_c2 >= 0.5 else 'Inactive' }}</div>
+  </div>
+
+  <div class="stat">
+    <span>Adversary Findings Escaped</span>
+    <strong style="color: #f43f5e;">{{ adversary.evaded_simulation.findings_count }} Findings Left</strong>
+    <div class="stat-desc">Detectors remaining active after evasion search</div>
+  </div>
+</section>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: flex-start;">
+  <!-- Interactive Evasion Simulation Console -->
+  <section class="panel" style="margin: 0;">
+    <div class="panel-header">
+      <div>
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Interactive Adversary Knobs
+        </h2>
+        <p class="panel-subtitle">Tune attack parameters to test detector resilience in real time</p>
+      </div>
+    </div>
+
+    <form id="evasionForm" onsubmit="runSimulation(event)" style="display: flex; flex-direction: column; gap: 18px;">
+      <div class="form-group">
+        <label for="rateInput">
+          <span>Attack Execution Rate</span>
+          <b id="rateVal" style="font-family: var(--font-mono); color: var(--cyan);">1.0x</b>
+        </label>
+        <input type="range" id="rateInput" min="0.25" max="2.5" step="0.25" value="1.0" oninput="document.getElementById('rateVal').innerText = this.value + 'x'">
+        <span class="hint">0.25x = Low-and-slow stealth | 2.5x = High-speed aggressive burst</span>
+      </div>
+
+      <div class="form-group">
+        <label for="jitterInput">
+          <span>Beacon Inter-Arrival Jitter</span>
+          <b id="jitterVal" style="font-family: var(--font-mono); color: var(--cyan);">5.0s</b>
+        </label>
+        <input type="range" id="jitterInput" min="0" max="30" step="1" value="5" oninput="document.getElementById('jitterVal').innerText = this.value + 's'">
+        <span class="hint">Higher jitter increases the coefficient of variation to evade periodicity detection</span>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-wrap">
+          <input type="checkbox" id="trustedDomain">
+          <span>Trusted-Domain Camouflage (Spoof municipal CDN domain)</span>
+        </label>
+      </div>
+
+      <button type="submit" class="button" id="simulateBtn" style="margin-top: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+        Simulate Detector Response
+      </button>
+    </form>
+  </section>
+
+  <!-- Live Simulation Result Card -->
+  <section class="panel" style="margin: 0;">
+    <div class="panel-header">
+      <div>
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Detector Coverage Telemetry
+        </h2>
+        <p class="panel-subtitle">Rule firing breakdown under simulated evasion conditions</p>
+      </div>
+    </div>
+
+    <div id="simResult">
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); padding: 18px; border-radius: var(--radius-md); margin-bottom: 16px;">
+        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Rules Fired</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+          {% for r in adversary.evaded_simulation.rules_fired %}
+          <code>{{ r }}</code>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>Authentication Spray Detection:</span>
+          <strong style="color: #34d399;">CAUGHT (Beta-Binomial)</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>DNS C2 Beacon Detection:</span>
+          <strong style="color: {% if adversary.evaded_simulation.c2_detected %}#34d399{% else %}#fbbf24{% endif %};">
+            {{ 'CAUGHT (N-gram / Entropy)' if adversary.evaded_simulation.c2_detected else 'DEVIATED (High Jitter)' }}
+          </strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>IoT Controller Command Anomaly:</span>
+          <strong style="color: #34d399;">CAUGHT (Off-Window Window)</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+async function runSimulation(e) {
+  e.preventDefault();
+  const btn = document.getElementById('simulateBtn');
+  btn.disabled = true;
+  btn.innerText = 'Evaluating detectors...';
+
+  const payload = {
+    rate: parseFloat(document.getElementById('rateInput').value),
+    jitter_seconds: parseFloat(document.getElementById('jitterInput').value),
+    trusted_domain_c2: document.getElementById('trustedDomain').checked
+  };
+
+  try {
+    const res = await fetch('/api/evasion/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    const rulesHtml = data.rules_fired.map(r => `<code>${r}</code>`).join(' ') || '<span style="color: var(--text-muted);">Zero detectors fired</span>';
+    
+    document.getElementById('simResult').innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); padding: 18px; border-radius: var(--radius-md); margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Rules Fired (${data.findings_count})</span>
+          <span class="tag ${data.evaded ? 'penalty' : 'boost'}">${data.evaded ? 'PARTIAL EVASION' : 'FULLY DETECTED'}</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+          ${rulesHtml}
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>Authentication Spray Detection:</span>
+          <strong style="color: ${data.spray_detected ? '#34d399' : '#fbbf24'};">${data.spray_detected ? 'CAUGHT (Beta-Binomial)' : 'EVADED'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>DNS C2 Beacon Detection:</span>
+          <strong style="color: ${data.c2_detected ? '#34d399' : '#fbbf24'};">${data.c2_detected ? 'CAUGHT (N-Gram / Rare)' : 'EVADED (High Jitter)'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm);">
+          <span>IoT Controller Command Anomaly:</span>
+          <strong style="color: ${data.impact_detected ? '#34d399' : '#fbbf24'};">${data.impact_detected ? 'CAUGHT (Off-Window)' : 'EVADED'}</strong>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    alert('Simulation error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg> Simulate Detector Response';
+  }
+}
+</script>
+{% endblock %}

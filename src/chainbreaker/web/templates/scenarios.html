@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Attack Scenarios Hub · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row">
+  <div>
+    <p class="eyebrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      CONNECTED-CITY INCIDENT RECONSTRUCTION BENCHMARK
+    </p>
+    <h1>Attack Recreation Scenarios</h1>
+    <p>Select and execute genuine multi-stage cyber attacks across municipal traffic signals, EV charging grids, cleanroom facilities, and campus network architectures.</p>
+  </div>
+</div>
+
+<section class="grid two">
+  {% for key, sc in scenarios.items() %}
+  <article class="panel" style="display: flex; flex-direction: column; justify-content: space-between; gap: 16px; border: 1px solid var(--border-default); transition: all 0.2s ease;">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <span class="tag" style="font-family: var(--font-mono); font-size: 11px;">SCENARIO // {{ key|upper }}</span>
+        <span class="criticality-tag {% if sc.criticality == 'LIFE-SAFETY' %}life-safety{% else %}essential{% endif %}">
+          {{ sc.criticality }}
+        </span>
+      </div>
+
+      <h2 style="font-size: 18px; margin-bottom: 8px; color: #fff;">{{ sc.title }}</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px;">
+        {{ sc.description }}
+      </p>
+
+      <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-bottom: 14px;">
+        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">Target Asset & Criticality</div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <strong style="color: #fff; font-family: var(--font-mono); font-size: 13px;">{{ sc.target_name }}</strong>
+          <code>{{ sc.target_id }}</code>
+        </div>
+      </div>
+
+      <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">Kill-Chain Progression</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        {% for st in sc.stages %}
+        <span class="tag" style="font-size: 11px;">{{ st }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 12px; color: var(--text-muted);">Deterministic Evaluation</span>
+      <form action="/scenarios/{{ key }}" method="post" style="margin: 0;">
+        <button type="submit" class="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Reconstruct Attack →
+        </button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Enterprise Database Management · ChainBreaker{% endblock %}
+
+{% block content %}
+<div class="page-head row" style="align-items: flex-start; justify-content: space-between;">
+  <div>
+    <p class="eyebrow" style="color: #38bdf8;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      DATABASE SCALABILITY & PERSISTENCE ENGINE
+    </p>
+    <h1>Database Health & Storage Architecture</h1>
+    <p>Persistent multi-tenant storage backing real-world smart city deployments, audit receipts, and historical incident runs.</p>
+  </div>
+  <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+    <form action="/api/database/seed" method="POST" style="margin: 0;">
+      <button type="submit" class="btn btn-primary" style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><polyline points="12 11 12 17 14 15"/><polyline points="12 11 12 17 10 15"/><path d="m18 8 4-4"/></svg>
+        Seed Demo Incidents
+      </button>
+    </form>
+    <a href="/history" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      View DB Archive
+    </a>
+  </div>
+</div>
+
+<!-- Database Metrics Cards -->
+<section class="grid four" style="margin-bottom: 24px;">
+  <div class="stat">
+    <span>Storage Engine</span>
+    <strong style="color: #38bdf8; font-size: 22px;">{{ db_info.engine }}</strong>
+    <div class="stat-desc">{{ db_info.mode }}</div>
+  </div>
+
+  <div class="stat">
+    <span>Connection Status</span>
+    <strong style="color: #34d399; font-size: 22px;">{{ db_info.status }}</strong>
+    <div class="stat-desc">Ping latency: {{ db_info.latency }}</div>
+  </div>
+
+  <div class="stat">
+    <span>Persisted Incidents</span>
+    <strong style="color: #fbbf24; font-size: 22px;">{{ db_info.run_count }}</strong>
+    <div class="stat-desc">Historical runs in database</div>
+  </div>
+
+  <div class="stat">
+    <span>Audit Receipts</span>
+    <strong style="color: #a855f7; font-size: 22px;">{{ db_info.decision_count }}</strong>
+    <div class="stat-desc">Human containment decisions logged</div>
+  </div>
+</section>
+
+<!-- Table Schema Catalog -->
+<section class="panel" style="margin-bottom: 24px;">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Active Relational Tables & Schema Inventory
+      </h2>
+      <p class="panel-subtitle">Both lightweight local tables and enterprise multi-tenant SQLAlchemy models synchronized</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Table Name</th>
+          <th>Purpose & Domain Role</th>
+          <th>Partitioning / Scoping</th>
+          <th style="text-align: right;">Live Rows</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for table in db_info.tables %}
+        <tr>
+          <td>
+            <code style="color: #38bdf8; font-weight: 700;">{{ table.name }}</code>
+          </td>
+          <td style="color: var(--text-secondary); font-size: 13px;">{{ table.purpose }}</td>
+          <td>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: #94a3b8; font-size: 10px;">
+              {{ table.scope }}
+            </span>
+          </td>
+          <td style="text-align: right; font-family: var(--font-mono); font-weight: 700; color: #fff;">
+            {{ table.row_count }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Deployment Architecture Architecture Callout -->
+<section class="panel" style="background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(9, 13, 22, 0.95)); border-color: rgba(56, 189, 248, 0.2);">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Real-World Deployment Flexibility (Section 10 of Proposal)
+      </h2>
+      <p class="panel-subtitle">Seamless transition from edge embedded sensor nodes to municipal multi-tenant cloud SIEMs</p>
+    </div>
+  </div>
+
+  <div class="grid three" style="margin-bottom: 16px;">
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); padding: 16px; border-radius: var(--radius-md);">
+      <h3 style="font-size: 14px; color: #fff; margin-bottom: 6px;">Zero-Config Edge Mode</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+        Uses local SQLite database automatically created at <code>runtime/databases/chainbreaker.sqlite3</code>. Ideal for campus IT, air-gapped industrial facilities, and hackathon demos.
+      </p>
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); padding: 16px; border-radius: var(--radius-md);">
+      <h3 style="font-size: 14px; color: #fff; margin-bottom: 6px;">Enterprise Cloud Mode</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+        Pass <code>CHAINBREAKER_DATABASE_URL=postgresql+psycopg://...</code> or use <code>docker compose up</code> to scale horizontally across municipal districts with full ACID compliance.
+      </p>
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); padding: 16px; border-radius: var(--radius-md);">
+      <h3 style="font-size: 14px; color: #fff; margin-bottom: 6px;">Immutable Receipts</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+        All analyst containment approvals are saved in <code>decisions</code> with actor identity, timestamp, and justification reason for audit-ready compliance.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

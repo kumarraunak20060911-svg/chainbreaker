@@ -58,6 +58,43 @@
   </div>
 </section>
 
+<!-- Attack Scenario Showcase Hub -->
+<section class="panel" style="background: rgba(19, 28, 49, 0.5);">
+  <div class="panel-header">
+    <div>
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Recreate Municipal Attack Scenarios
+      </h2>
+      <p class="panel-subtitle">Select and reconstruct authentic multi-stage intrusions from the project proposal</p>
+    </div>
+    <a href="/scenarios" class="button secondary" style="font-size: 11px; padding: 5px 12px;">
+      View All Scenarios →
+    </a>
+  </div>
+
+  <div class="grid four" style="margin: 8px 0 0;">
+    {% for key, sc in scenarios.items() %}
+    <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span class="tag" style="font-size: 9.5px; font-weight: 700;">{{ key|upper }}</span>
+          <span class="criticality-tag {% if sc.criticality == 'LIFE-SAFETY' %}life-safety{% else %}essential{% endif %}" style="font-size: 9px; padding: 1px 6px;">
+            {{ sc.criticality }}
+          </span>
+        </div>
+        <strong style="color: #fff; font-size: 13px; display: block; margin-bottom: 6px;">{{ sc.title }}</strong>
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">Target: <code>{{ sc.target_id }}</code></p>
+      </div>
+
+      <a href="/scenarios/launch/{{ key }}" class="button secondary" style="font-size: 11px; padding: 6px 10px; width: 100%;">
+        Recreate Attack →
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
 <section class="panel">
   <div class="panel-header">
     <div>

@@ -1,10 +1,11 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: chainbreaker
       POSTGRES_USER: chainbreaker
-      POSTGRES_PASSWORD: ${CHAINBREAKER_POSTGRES_PASSWORD:?Set CHAINBREAKER_POSTGRES_PASSWORD in the shell}
+      POSTGRES_PASSWORD: ${CHAINBREAKER_POSTGRES_PASSWORD:-chainbreaker-secure-pass}
     volumes:
       - chainbreaker-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -15,20 +16,19 @@ services:
 
   app:
     build: .
+    restart: unless-stopped
     environment:
-      CHAINBREAKER_ENVIRONMENT: production
-      CHAINBREAKER_API_TOKEN: ${CHAINBREAKER_API_TOKEN:?Set CHAINBREAKER_API_TOKEN in the shell}
-      CHAINBREAKER_DATABASE_URL: postgresql+psycopg://chainbreaker:${CHAINBREAKER_POSTGRES_PASSWORD}@db:5432/chainbreaker
+      CHAINBREAKER_ENVIRONMENT: development
+      CHAINBREAKER_API_TOKEN: ${CHAINBREAKER_API_TOKEN:-cb-demo-token-9981}
+      CHAINBREAKER_DATABASE_URL: postgresql+psycopg://chainbreaker:${CHAINBREAKER_POSTGRES_PASSWORD:-chainbreaker-secure-pass}@db:5432/chainbreaker
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - chainbreaker-uploads:/app/runtime/uploads
-      - chainbreaker-reports:/app/runtime/reports
+      - chainbreaker-runtime:/app/runtime
 
 volumes:
   chainbreaker-postgres:
-  chainbreaker-uploads:
-  chainbreaker-reports:
+  chainbreaker-runtime:

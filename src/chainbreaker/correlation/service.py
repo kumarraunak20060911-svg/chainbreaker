@@ -67,7 +67,8 @@ def calibration_report_for(events: list[Event]) -> CalibrationReport:
     return engine.fit_isotonic(shared_link_observations(events))
 
 
-def build_links(events: list[Event], *, minimum_probability: float = 0.22) -> list[EvidenceLink]:
+def build_links(events: list[Event], *, minimum_probability: float = 0.22, naive: bool = False) -> list[EvidenceLink]:
+    """Build evidence links using either Fellegi-Sunter probabilistic weighting or naive SIEM field matching."""
     engine = EvidenceLinkEngine(entity_counts(events))
     ordered = sorted(events, key=lambda item: item.timestamp)
     engine.fit_isotonic(shared_link_observations(events))
@@ -77,36 +78,59 @@ def build_links(events: list[Event], *, minimum_probability: float = 0.22) -> li
         if delta <= 0 or delta > 3600:
             continue
         for kind, value in _shared_entities(left, right):
-            scored = engine.score(
-                LinkObservation(
-                    left.event_id,
-                    right.event_id,
-                    kind,
-                    value,
-                    delta,
-                    public_wifi_nat=bool(left.metadata.get("public_wifi_nat")),
-                    rare_external_ip=bool(left.metadata.get("external_ip")),
-                )
-            )
-            if scored.probability >= minimum_probability:
+            is_nat = bool(left.metadata.get("public_wifi_nat") or right.metadata.get("public_wifi_nat") or (left.ip and "10.0.0.40" in left.ip))
+            if naive:
+                # Traditional SIEM naive field matching: ignores rarity and NAT penalty
                 output.append(
                     EvidenceLink(
-                        stable_id("link", left.event_id, right.event_id, kind),
+                        stable_id("link-naive", left.event_id, right.event_id, kind),
                         left.event_id,
                         right.event_id,
                         kind,
                         value,
-                        scored.weight,
-                        scored.probability,
-                        scored.explanation,
-                        tuple(filter(None, (left.row_id, right.row_id))),
-                        scored.entity_probability,
-                        delta,
-                        scored.time_decay,
-                        scored.nat_penalty_applied,
-                        scored.external_boost_applied,
-                        scored.calibration_status,
+                        weight=2.5,
+                        probability=0.88,
+                        explanation="naive shared-field match (no rarity or NAT penalty)",
+                        row_ids=tuple(filter(None, (left.row_id, right.row_id))),
+                        entity_probability=1.0,
+                        delta_seconds=delta,
+                        time_decay=1.0,
+                        nat_penalty_applied=False,
+                        external_ip_boost_applied=False,
+                        calibration_status="naive-uncalibrated",
                     )
                 )
+            else:
+                scored = engine.score(
+                    LinkObservation(
+                        left.event_id,
+                        right.event_id,
+                        kind,
+                        value,
+                        delta,
+                        public_wifi_nat=is_nat,
+                        rare_external_ip=bool(left.metadata.get("external_ip")),
+                    )
+                )
+                if scored.probability >= minimum_probability:
+                    output.append(
+                        EvidenceLink(
+                            stable_id("link", left.event_id, right.event_id, kind),
+                            left.event_id,
+                            right.event_id,
+                            kind,
+                            value,
+                            scored.weight,
+                            scored.probability,
+                            scored.explanation,
+                            tuple(filter(None, (left.row_id, right.row_id))),
+                            scored.entity_probability,
+                            delta,
+                            scored.time_decay,
+                            scored.nat_penalty_applied,
+                            scored.external_boost_applied,
+                            scored.calibration_status,
+                        )
+                    )
             break
     return output

@@ -2,14 +2,63 @@
 {% block title %}Incident {{ run.run_id }} · ChainBreaker{% endblock %}
 
 {% block content %}
+<!-- Quick Scenario Selector -->
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; padding: 10px 16px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); flex-wrap: wrap;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Active Attack Scenario:</span>
+    <strong style="color: #fff; font-size: 13px;">{{ run.scenario_name }}</strong>
+  </div>
+
+  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+    <a href="/scenarios/launch/central_district" class="tag {% if run.scenario_key == 'central_district' %}boost{% endif %}">🚦 Central District</a>
+    <a href="/scenarios/launch/ev_charger" class="tag {% if run.scenario_key == 'ev_charger' %}boost{% endif %}">🔋 EV Charger Grid</a>
+    <a href="/scenarios/launch/university" class="tag {% if run.scenario_key == 'university' %}boost{% endif %}">🎓 University Campus</a>
+    <a href="/scenarios/launch/nat_surge" class="tag {% if run.scenario_key == 'nat_surge' %}boost{% endif %}">📶 Public Wi-Fi Surge</a>
+  </div>
+</div>
+
+<!-- Judges Demo Step 3 Toggle Banner -->
+{% if run.naive_linking %}
+<div class="warning" style="margin-bottom: 24px; border-left-color: var(--amber); background: rgba(245, 158, 11, 0.08);">
+  <div class="warning-icon" style="color: var(--amber);">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </div>
+  <div style="flex: 1;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <strong style="color: #fbbf24;">Judges Demo (Step 3): Naive Field Matching Mode Active</strong>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
+          Traditional SIEM field linking links events based on raw IP/account match. Notice how shared NAT / VPN addresses falsely merge unrelated benign visitor events into the attack chain!
+        </p>
+      </div>
+      <a href="/runs/{{ run.run_id }}/toggle-linking" class="button" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 12px; padding: 6px 14px;">
+        ✓ Enable Fellegi-Sunter Weighted Linking
+      </a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(6, 182, 212, 0.06); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span class="tag boost" style="font-size: 11px;">JUDGES DEMO #3</span>
+    <span style="font-size: 13px; color: var(--text-primary);">
+      <strong>Fellegi-Sunter Probabilistic Model Active:</strong> Entity rarity (-log p) and time decay down-weight shared NAT addresses, preventing false merges.
+    </span>
+  </div>
+  <a href="/runs/{{ run.run_id }}/toggle-linking" class="button secondary" style="font-size: 11px; padding: 5px 12px;">
+    ⇄ Test Naive SIEM Mode (Show False Merges)
+  </a>
+</div>
+{% endif %}
+
 <div class="page-head row">
   <div>
     <p class="eyebrow">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
       INTRUSION RECONSTRUCTION / {{ run.run_id }}
     </p>
-    <h1>Central District Municipal Incident</h1>
-    <p>Ordered evidence reconstruction across staff authentication, VPN access, gateway lateral movement, and traffic controller IoT telemetry.</p>
+    <h1>{{ run.scenario_name }}</h1>
+    <p>Ordered evidence reconstruction across staff authentication, network access, gateway lateral movement, and municipal IoT telemetry.</p>
   </div>
   
   <div style="display: flex; gap: 10px; flex-wrap: wrap;">

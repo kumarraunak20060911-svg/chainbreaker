@@ -16,11 +16,19 @@ def _items(value: Any) -> tuple[str, ...]:
 
 
 def asset_from_row(row: Mapping[str, Any]) -> Asset:
+    crit_raw = str(row.get("criticality") or "convenience").lower().strip()
+    if "safety" in crit_raw:
+        crit = Criticality.LIFE_SAFETY
+    elif "essent" in crit_raw:
+        crit = Criticality.ESSENTIAL
+    else:
+        crit = Criticality.CONVENIENCE
+
     return Asset(
         asset_id=str(row["asset_id"]),
         name=str(row.get("name") or row["asset_id"]),
         asset_type=str(row.get("asset_type") or "unknown"),
-        criticality=Criticality(str(row.get("criticality") or Criticality.CONVENIENCE)),
+        criticality=crit,
         baseline_services=_items(row.get("baseline_services")),
         owner=str(row.get("owner") or ""),
     )
